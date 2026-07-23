@@ -259,7 +259,7 @@ int is_acceptable_target(int kit_idx, TreeNode* target_node) {
     if (explicit_gen_node && !is_tree_node_ancestor(explicit_gen_node, target_node)) return 0;
     
     // 3. Strict Genealogical Boundary: A kit cannot cross into a deeper explicit GEN node's territory.
-    if (explicit_gen_node && explicit_gen_node != target_node) {
+    if (!relaxed_mode && explicit_gen_node && explicit_gen_node != target_node) {
         TreeNode* curr = target_node;
         while (curr != NULL && curr != explicit_gen_node) {
             if (curr->type == NODE_GEN || curr->type == NODE_SNP) {
@@ -648,7 +648,7 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
             int freqs[256] = {0}, child_node_matches[256] = {0}; 
             c = node->first_child; while (c) { int cv = c->local_modal[m]; if (cv > 0 && cv != p_val && cv < 256) { freqs[cv]++; child_node_matches[cv]++; } c = c->next_sibling; }
             for (int i = 0; i < node->kit_count; i++) { 
-                if (node->type != NODE_GEN && node->type != NODE_SNP) {
+                if (relaxed_mode || (node->type != NODE_GEN && node->type != NODE_SNP)) {
                     int kv = kits[node->kit_indices[i]].str_values[m]; if (kv > 0 && kv != p_val && kv < 256) freqs[kv]++; 
                 }
             }
@@ -673,7 +673,7 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
             if (strcmp(node->name, "WilliamNeely.1591") == 0) {
                 printf("DEBUG: WilliamNeely grouped %d children into %s for marker %s\n", g_cnt, strn->name, marker_names[best_m]);
             }
-            if (node->type != NODE_GEN && node->type != NODE_SNP) {
+            if (relaxed_mode || (node->type != NODE_GEN && node->type != NODE_SNP)) {
                 int k_k[MAX_KITS], k_c = 0;
                 for (int i = 0; i < node->kit_count; i++) { 
                     int k_i = node->kit_indices[i]; if (kits[k_i].str_values[best_m] == best_val) { if (strn->kit_count < MAX_KITS) strn->kit_indices[strn->kit_count++] = k_i; } 
@@ -819,7 +819,7 @@ void evaluate_reassignment_targets_recursive(TreeNode* target, int kit_idx, int 
                 int kv = kits[kit_idx].str_values[m], nv = target->local_modal[m];
                 if (kv > 0 && nv > 0 && kv != nv) dist++;
             }
-            if (dist < *min_dist) { *min_dist = dist; *best_node = target; }
+            if (dist < *min_dist || (relaxed_mode && dist == *min_dist && *best_node && is_tree_node_ancestor(*best_node, target))) { *min_dist = dist; *best_node = target; }
         }
     }
     TreeNode* c = target->first_child; while (c) { evaluate_reassignment_targets_recursive(c, kit_idx, total_markers, current_node, best_node, min_dist); c = c->next_sibling; }
@@ -835,7 +835,7 @@ void find_closest_node_recursive(TreeNode* node, int kit_idx, int total_markers,
                 int n_val = node->local_modal[m];
                 if (k_val > 0 && n_val > 0 && k_val != n_val) dist++;
             }
-            if (dist < *min_dist) { *min_dist = dist; *best_node = node; }
+            if (dist < *min_dist || (relaxed_mode && dist == *min_dist && *best_node && is_tree_node_ancestor(*best_node, node))) { *min_dist = dist; *best_node = node; }
         }
     }
     TreeNode* c = node->first_child;
@@ -1227,7 +1227,8 @@ void apply_predictive_clustering_recursive(TreeNode* node, int total_markers) {
     if (!node) return;
 
     // 1. Process this specific node ONLY if it meets the threshold
-    if (node->kit_count >= MIN_KITS_CLUSTER_NODE) {
+    int min_kits = relaxed_mode ? 2 : MIN_KITS_CLUSTER_NODE;
+    if (node->kit_count >= min_kits) {
         branch_by_shared_mutations(node, total_markers);
         //cluster_inferred_str_nodes(node, total_markers);
     }

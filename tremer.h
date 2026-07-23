@@ -183,4 +183,6 @@ void generate_html_table_output(const char* filename, TreeNode* root);
 void generate_html_filtered_table_output(const char* filename, TreeNode* root);
 void generate_html_gen_table_output(const char* filename, TreeNode* root);
 
+extern int relaxed_mode;
+
 #endif

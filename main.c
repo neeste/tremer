@@ -23,6 +23,7 @@ int str_node_counter = 1;
 
 char project_name[MAX_STRING_LEN] = "Project";
 int global_group_num = 0;
+int relaxed_mode = 0;
 char root_haplogroup_letter = '\0';
 
 // =========================================================
@@ -165,12 +166,12 @@ int main(int argc, char* argv[]) {
     strcpy(project_name, "Project");
 
     char target_filter[MAX_STRING_LEN] = "";
-    int has_filter = 0;
     char cmd_project_name[MAX_STRING_LEN] = "";
+    int cmd_group_num = -1;
+    int has_cmd_modal = 0;
+    int has_filter = 0;
     int has_cmd_project = 0;
-    int cmd_group_num = 0;
     int has_cmd_group = 0;
-    int has_cmd_modal = 0;  // NEW: Flag for the -m option
     int input_file_idx = -1;
 
     for (int i = 1; i < argc; i++) {
@@ -189,9 +190,12 @@ int main(int argc, char* argv[]) {
             has_cmd_group = 1;
             i++;
         } else if (strcmp(argv[i], "-m") == 0) {
-            has_cmd_modal = 1; // NEW: Triggers the MODAL export file
-        } else {
+            has_cmd_modal = 1;
+        } else if (strcmp(argv[i], "-relaxed") == 0) {
+            relaxed_mode = 1;
+        } else if (argv[i][0] != '-') {
             input_file_idx = i;
+            break;
         }
     }
 

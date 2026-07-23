@@ -55,7 +55,21 @@ Neely: $(TARGET)
 		cat tree[1-9].txt > trees.txt ; \
 		rm -f tree[1-9].txt Neely_*_*.html *.json ; \
 		mv trees.txt  Neely_*.* Neely_project ; \
-		echo "Neely processing complete."; \
+		echo "Neely strict processing complete."; \
+	fi
+
+relaxed: $(TARGET)
+	@if [ -z "$(Neely_INPUTS)" ]; then \
+		echo "No input files found."; \
+	else \
+		echo "Executing $(TARGET) -relaxed on all Neely files..."; \
+		for file in $(Neely_INPUTS); do \
+			./$(TARGET) -relaxed $$file ; \
+		done ; \
+		cat tree[1-9].txt > trees_relaxed.txt ; \
+		rm -f tree[1-9].txt Neely_*_*.html *.json ; \
+		mv trees_relaxed.txt  Neely_project ; \
+		echo "Neely relaxed processing complete."; \
 	fi
 
 # Clean up the compiled executable and the generated output files

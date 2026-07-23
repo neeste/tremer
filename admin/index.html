@@ -92,8 +92,12 @@
                 <input type="text" id="projOverride" placeholder="e.g., Neely">
             </label>
             <label>
-                Override Group Number (Optional):
-                <input type="number" id="groupOverride" placeholder="e.g., 12">
+                Override Group Num (Optional):
+                <input type="number" id="groupOverride" placeholder="e.g., 2">
+            </label>
+            <label style="display: flex; align-items: center; gap: 8px; margin-top: 10px;">
+                <input type="checkbox" id="relaxedMode">
+                Heuristic Discovery Mode (Relaxed)
             </label>
         </div>
 
@@ -165,6 +169,10 @@
             const groupOverride = document.getElementById('groupOverride').value.trim();
             if (groupOverride) {
                 args.push('-g', groupOverride);
+            }
+            
+            if (document.getElementById('relaxedMode').checked) {
+                args.push('-relaxed');
             }
 
             // --- PAUSE EXECUTION TO ALLOW UI TO REPAINT ---
