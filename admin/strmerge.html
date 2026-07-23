@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREMER - STR Merge Utility</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            max-width: 500px;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 0 auto 20px auto;
+            padding: 10px;
+            border: 2px dashed #bdc3c7;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #27ae60;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>TREMER STR Merge Utility</h2>
+    <p>Select multiple FTDNA CSV files to merge them into a single <code>strmerge.txt</code> file formatted for TREMER.</p>
+    
+    <input type="file" id="csvFiles" multiple accept=".csv">
+    <button onclick="processFiles()">Merge and Download</button>
+    
+    <div id="status"></div>
+</div>
+
+<script>
+    async function processFiles() {
+        const fileInput = document.getElementById('csvFiles');
+        const statusDiv = document.getElementById('status');
+        const files = fileInput.files;
+
+        if (files.length === 0) {
+            alert("Please select at least one CSV file.");
+            return;
+        }
+
+        statusDiv.innerText = "Processing " + files.length + " files...";
+        let outputText = "";
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const text = await file.text();
+            
+            // Extract the Kit Name
+            let kitName = file.name;
+            if (kitName.includes('_YDNA_')) {
+                kitName = kitName.split('_YDNA_')[0];
+            } else {
+                kitName = kitName.split('.')[0]; // Fallback if _YDNA_ is missing
+            }
+
+            // Split the file into lines
+            const lines = text.split(/\r?\n/);
+            
+            // FTDNA files typically have headers on line 0, data on line 1
+            if (lines.length < 2) continue; 
+            
+            const headerLine = lines[0].split(',');
+            const dataLine = lines[1].split(',');
+            let strValues = [];
+
+            for (let j = 0; j < dataLine.length; j++) {
+                let val = dataLine[j].trim();
+                val = val.replace(/^"|"$/g, ''); // Remove quotes
+                
+                // Identify the column header to skip metadata
+                let header = "";
+                if (j < headerLine.length) {
+                    header = headerLine[j].trim().replace(/^"|"$/g, '').toLowerCase();
+                }
+                
+                // Skip common FTDNA metadata columns
+                if (header.includes('kit') || header.includes('name') || header.includes('haplogroup') || header.includes('snp')) {
+                    continue;
+                }
+
+                // Handle missing values (empty, or pure hyphen)
+                if (val === "" || val === "-") {
+                    strValues.push("N");
+                } 
+                // Handle Multi-copy markers (e.g., "11-14" or "14-15-16")
+                else if (val.includes("-")) {
+                    const subValues = val.split("-");
+                    for (let k = 0; k < subValues.length; k++) {
+                        const subVal = subValues[k].trim();
+                        const match = subVal.match(/\d+/);
+                        if (match) {
+                            strValues.push(match[0]);
+                        } else {
+                            strValues.push("N"); // Fallback if a segment is missing
+                        }
+                    }
+                } 
+                // Handle standard single values
+                else {
+                    const match = val.match(/\d+/);
+                    if (match) {
+                        strValues.push(match[0]);
+                    } else {
+                        strValues.push("N"); 
+                    }
+                }
+            }
+
+            // Append the kit and its space-separated STRs to the output text
+            outputText += kitName + " " + strValues.join(' ') + "\n";
+        }
+
+        // Create the downloadable text file
+        const blob = new Blob([outputText], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'strmerge.txt';
+        document.body.appendChild(a);
+        a.click();
+        
+        // Cleanup
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        statusDiv.innerText = `Successfully merged ${files.length} files!`;
+    }
+</script>
+
+</body>
+</html>

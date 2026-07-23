@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREMER Input Format</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; line-height: 1.6; }
+        .container { max-width: 800px; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: auto; }
+        h1, h2 { color: #333; }
+        h3 { color: #0066cc; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+        code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; color: #d14; font-weight: bold; }
+        pre { background: #f4f4f4; padding: 15px; border-left: 4px solid #0066cc; overflow-x: auto; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">&larr; Back to Documentation</a>
+    
+    <h1>TREMER Input File Format</h1>
+    <p>The TREMER input file is a plain text file that contains all the structural, genetic, and genealogical data required to build the phylogenetic tree. The file is divided into distinct data blocks, each indicated by a specific tag starting with a forward slash (e.g., <code>/MARKERS</code>). Lines beginning with an asterisk (<code>*</code>) are treated as comments and ignored by the parser.</p>
+
+    <h2>Required Blocks</h2>
+
+    <h3><code>/MARKERS</code></h3>
+    <p>This block defines the specific Y-DNA STR markers used in the project. The markers must be listed in the exact sequential order that their values will appear in the <code>/STRDATA</code> block.</p>
+    <pre>/MARKERS
+DYS393 DYS390 DYS19 DYS391 DYS385a DYS385b DYS426 DYS388</pre>
+
+    <h2>Optional Blocks</h2>
+
+    <h3><code>/PROJECT</code></h3>
+    <p>Sets the global name of the project. This is used to prefix the output HTML and SVG filenames.</p>
+    <pre>/PROJECT
+Neely_DNA_Project</pre>
+
+    <h3><code>/GROUPNUM</code></h3>
+    <p>Sets the global group number being processed. This is used in titles and filenames (e.g., <code>Group 12</code>).</p>
+    <pre>/GROUPNUM
+12</pre>
+
+    <h3><code>/MODAL</code></h3>
+    <p>Defines the baseline or "ancestral" STR values for the entire group. This is used as the starting point for calculating mutations down the tree.</p>
+    <pre>/MODAL
+13 24 14 11 11 14 12 12</pre>
+
+    <h3><code>/SNPTREE</code></h3>
+    <p>Defines the deterministic backbone of the tree based on known SNP mutations. The format allows you to specify parent-child relationships. You can use standard notation (<code>Child Parent</code>) or dot-notation to assign historical dates to the SNPs.</p>
+    <pre>/SNPTREE
+A17284 BY17509
+A17452.1634 A17284.1597</pre>
+    <p>You can mix these formats within the same <code>/SNPTREE</code> block, and TREMER will merge the overlapping lines into a single, unified tree structure.</p>
+
+    <h3><code>/GENDATA</code></h3>
+    <p>Defines genealogical groups and the kits that belong to them. It maps kits to known historical ancestors. The format uses the Ancestor name (with an optional MRCA date), followed by a list of kit numbers enclosed in parentheses.</p>
+    <pre>/GENDATA
+JohnDoe.1800 (123456 234567)
+JaneSmith.1850 (345678 456789)</pre>
+
+    <h3><code>/STRDATA</code></h3>
+    <p>Contains the raw STR test results for every kit. Each entry begins with the Kit ID, followed by its values for the defined markers. Use <code>N</code> or <code>0</code> for missing markers.</p>
+    <pre>/STRDATA
+123456  13 24 14 11 11 14 12 12
+234567  13 25 14 10 N 14 12 12</pre>
+
+    <h3><code>/KITDATA</code></h3>
+    <p>Specifies the known birth year of individual kits. This data is used by the engine to calculate genetic distance and estimate the Time to Most Recent Common Ancestor (TMRCA) for inferred STR branches. The format uses the Kit ID, followed by a period and the four-digit birth year.</p>
+    <pre>/KITDATA
+B201693.1950  991341.1951 999290.1950 324852.1956 911337.1950
+B1255475.1950 137035.1917</pre>
+
+    <h3><code>/SNPDATA</code></h3>
+    <p>Lists the positive (<code>+</code>), negative (<code>-</code>), or untested (<code>?</code>) SNP results for specific kits. The format requires the Kit ID, followed by the specific SNP test results in parentheses.</p>
+    <pre>/SNPDATA
+123456 (R-M269+ R-L21+ R-DF13-)
+234567 (R-M269+ R-L21?)</pre>
+
+    <h3><code>/GROUPS</code></h3>
+    <p>Assigns a descriptive group label to a kit. This label will be printed below the kit ID in the final SVG tree output.</p>
+    <pre>/GROUPS
+123456 "Virginia Branch"
+234567 "Irish Origins"</pre>
+
+</div>
+</body>
+</html>

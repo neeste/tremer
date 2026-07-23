@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About TREMER</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; line-height: 1.6; }
+        .container { max-width: 800px; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: auto; }
+        h1, h2 { color: #333; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+        code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; color: #d14; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">← Back to TREMER</a>
+    
+    <h1>About TREMER</h1>
+    
+    <h2>1. What TREMER Does and How It Works</h2>
+    <p>TREMER is a specialized computational biology tool designed to construct highly accurate phylogenetic trees. It builds an initial tree from Y-DNA STR (Short Tandem Repeat) values, and subsequently merges that STR tree with deterministic trees constructed from hard SNP (Single Nucleotide Polymorphism) data and genealogical records.</p>
+    
+    <p>To handle the biological reality of hyper-mutable markers (which frequently back-mutate and confuse strict mathematical models), TREMER utilizes a sophisticated <strong>Two-Pass Architecture</strong>:</p>
+    <ul>
+        <li><strong>Phase 1 (The Structural Pass):</strong> The core engine builds the physical scaffolding of the tree using robust data overlap and majority rules, guaranteeing that branches, SNPs, and genealogical clusters are locked together with absolute structural integrity.</li>
+        <li><strong>Phase 2 (The Parsimony Scrub):</strong> Once the structure is locked, a strict biological auditor sweeps the tree. If it detects highly improbable mutation loops (such as a mutation that immediately reverses across multiple child branches), it safely scrubs the false anomaly and pushes the mutation to the specific sub-branch that actually caused it.</li>
+    </ul>
+    <p>This decoupling of structure and presentation results in a clean, biologically sound hierarchy.</p>
+
+    <h2>2. What the Input Files Contain</h2>
+    <p>TREMER accepts a single, dynamically named text file (e.g., <code>Project_s1.txt</code>) as input. This file contains block-tagged sections that provide the engine with the necessary genetic and historical data:</p>
+    <ul>
+        <li><strong>Markers and Modals:</strong> Lists of the specific STR markers being compared and the foundational ancestral values for the group.</li>
+        <li><strong>SNP and GEN Hierarchies:</strong> Hard evidence defining the chronological order of known ancestors and haplogroup mutations.</li>
+        <li><strong>Kit Data:</strong> The specific STR values, positive/negative SNP tests, and subgroup affiliations for every individual kit being analyzed.</li>
+    </ul>
+
+    <h2>3. The User Interface</h2>
+    <p>The TREMER web interface is powered entirely by WebAssembly (Wasm). When you upload a file and click "Generate Tree," the raw C engine executes locally within your own web browser. This means your data is processed on your local CPU without being uploaded to a remote backend server, ensuring maximum privacy and speed.</p>
+    <p><strong>Targeted Filtering:</strong> By default, TREMER will generate the full suite of visual trees and data tables for the entire project. However, if you specify a target Node or Kit ID in the interface before generating, the engine enters "Filtered Mode." In this mode, it bypasses the standard outputs and generates a customized Variant STR Marker table (HTML) specifically isolated to that kit's ancestral line.</p>
+    <p>Once processed, you can preview the generated files directly in your browser tab or download them to your hard drive.</p>
+
+    <h2>4. What the Output Files Contain</h2>
+    <p>Upon a successful execution, TREMER generates five highly-detailed output files:</p>
+    <ul>
+        <li><code>tree[Group].txt</code>: A hierarchical, text-based representation of the generated phylogenetic tree.</li>
+        <li><code>[Project]_s[Group].svg</code>: A visual, graphic rendering of the phylogenetic tree featuring chronological scaling, junction boxes, and terminal STR mutations.</li>
+        <li><code>[Project]_s[Group].html</code>: A comprehensive data table cross-referencing all kits against all tested STR marker values.</li>
+        <li><code>[Project]_b[Group].html</code>: A filtered HTML table displaying only the variant STR markers (mutations) that deviate from the group's local modal baseline.</li>
+        <li><code>[Project]_g[Group].html</code>: An HTML table displaying the positive/negative testing statuses of all kits for the provided GEN and SNP markers.</li>
+    </ul>
+</div>
+
+</body>
+</html>

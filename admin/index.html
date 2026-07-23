@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREMER - Phylogenetic Tree Builder</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; }
+        .container { max-width: 650px; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: auto; }
+        .nav-menu { text-align: right; margin-bottom: 10px; font-size: 14px; }
+        .nav-menu a { color: #0066cc; text-decoration: none; font-weight: bold; margin-left: 15px; }
+        .nav-menu a:hover { text-decoration: underline; }
+        h1 { color: #333; margin-top: 0; }
+        
+        .upload-section { margin: 20px 0; padding: 20px; border: 2px dashed #ccc; text-align: center; background-color: #fafafa; border-radius: 8px;}
+        
+        .options-section { text-align: left; margin: 20px auto; max-width: 400px; padding: 15px; background: #fff; border: 1px solid #ddd; border-radius: 6px;}
+        .options-section label { display: block; margin-bottom: 8px; font-size: 14px; color: #555;}
+        .options-section input[type="text"], .options-section input[type="number"] { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px;}
+        
+        button { background-color: #0066cc; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 5px; font-size: 16px; margin-top: 10px; }
+        button:hover { background-color: #005bb5; }
+        
+        #output-section { display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc; }
+        .file-item { display: flex; align-items: center; justify-content: space-between; background: #f9f9f9; padding: 10px; margin-bottom: 10px; border-radius: 5px; border: 1px solid #eee; }
+        .file-name { font-weight: bold; color: #333; }
+        
+        /* Button Grouping Styles */
+        .btn-group { display: flex; align-items: center; }
+        .action-btn { background: #eee; color: #333; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 14px; border: 1px solid #ccc; margin-left: 10px; cursor: pointer;}
+        .action-btn:hover { background: #e0e0e0; }
+        
+        /* Fullscreen Viewer Styles */
+        #viewer-container { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100vw; height: 100vh; 
+            background: white; 
+            z-index: 10000; 
+            flex-direction: column; 
+            margin: 0; padding: 0; border: none; border-radius: 0; box-sizing: border-box;
+        }
+        #viewer-header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 10px 20px; background: #eee; border-bottom: 1px solid #ccc; margin: 0; 
+        }
+        iframe { 
+            flex-grow: 1; width: 100%; height: 100%; border: none; background: #fff;
+        }
+        
+        #report-container { display: none; margin-bottom: 20px; padding: 15px; border-radius: 5px; font-size: 14px; }
+        #report-container h3 { margin-top: 0; margin-bottom: 10px; font-size: 16px; }
+        #report-container ul { margin: 0; padding-left: 20px; line-height: 1.5; }
+    </style>
+
+<script>
+    var Module = {
+        locateFile: function(path) {
+            if (path.endsWith('.wasm')) {
+                return '../wasm/' + path;
+            }
+            return path;
+        }
+    };
+</script>
+
+    <script src="../wasm/tremer.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <div class="nav-menu">
+        <a href="about.html">About</a>
+        <a href="input_format.html">Input format</a>
+        <a href="strmerge.html">STR merge</a>
+    </div>
+
+    <h1>TREMER</h1>
+    <p>Upload your Y-DNA project text file to generate the phylogenetic tree.</p>
+
+    <div class="upload-section">
+        <input type="file" id="fileInput" accept=".txt">
+        
+        <div class="options-section">
+            <label>
+                Target Filter Node/Kit (Optional):
+                <input type="text" id="targetFilter" placeholder="e.g., STR05 or ThomasNeely.1750">
+            </label>
+            <label>
+                Override Project Name (Optional):
+                <input type="text" id="projOverride" placeholder="e.g., Neely">
+            </label>
+            <label>
+                Override Group Number (Optional):
+                <input type="number" id="groupOverride" placeholder="e.g., 12">
+            </label>
+        </div>
+
+        <button onclick="processFile()">Generate Tree</button>
+    </div>
+
+    <div id="output-section">
+        <h2>Generated Files</h2>
+        
+        <div id="report-container"></div>
+        
+        <div id="downloads"></div>
+    </div>
+</div>
+
+<div id="viewer-container">
+    <div id="viewer-header">
+        <h3 style="margin:0;">File Viewer</h3>
+        <button onclick="closeViewer()" style="margin:0; padding: 5px 15px; font-size: 14px; background: #cc0000; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Close</button>
+    </div>
+    <iframe id="file-viewer"></iframe>
+</div>
+
+<script>
+    function processFile() {
+        const fileInput = document.getElementById('fileInput');
+        if (!fileInput.files.length) {
+            alert('Please select a file first.');
+            return;
+        }
+
+        // --- NEW FIX: DELETE OLD JSON REPORTS FROM VIRTUAL FILESYSTEM ---
+        try {
+            const existingFiles = FS.readdir('.');
+            existingFiles.forEach(f => {
+                if (f.endsWith('.json') && f.includes('_report_')) {
+                    FS.unlink(f); // This deletes the file from Emscripten's memory!
+                }
+            });
+        } catch (e) {
+            console.warn("Could not clean up old report files.");
+        }
+
+        // --- CLEAR PREVIOUS STATE IMMEDIATELY ---
+        document.getElementById('report-container').style.display = 'none';
+        document.getElementById('report-container').innerHTML = '';
+        document.getElementById('downloads').innerHTML = 'Generating...';
+        document.getElementById('output-section').style.display = 'block';
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            FS.writeFile(file.name, data);
+
+            let args = [file.name];
+            
+            const targetFilter = document.getElementById('targetFilter').value.trim();
+            if (targetFilter) {
+                args.push('-n', targetFilter);
+            }
+            
+            const projOverride = document.getElementById('projOverride').value.trim();
+            if (projOverride) {
+                args.push('-p', projOverride);
+            }
+
+            const groupOverride = document.getElementById('groupOverride').value.trim();
+            if (groupOverride) {
+                args.push('-g', groupOverride);
+            }
+
+            // --- PAUSE EXECUTION TO ALLOW UI TO REPAINT ---
+            setTimeout(function() {
+                
+                // Run the C Engine
+                Module.callMain(args);
+
+                // --- 1. Check for Syntax JSON Report ---
+                const reportContainer = document.getElementById('report-container');
+                reportContainer.style.display = 'none';
+                reportContainer.innerHTML = '';
+
+                try {
+                    // Dynamically find the JSON file to avoid naming mismatches
+                    const dir = FS.readdir('.');
+                    const jsonFileName = dir.find(f => f.endsWith('.json') && f.includes('_report_'));
+                    
+                    if (jsonFileName) {
+                        const jsonStr = FS.readFile(jsonFileName, { encoding: 'utf8' });
+                        const report = JSON.parse(jsonStr);
+                        
+                        if (report.status === "error" || report.status === "warning") {
+                            reportContainer.style.display = 'block';
+                            reportContainer.style.backgroundColor = report.status === "error" ? "#ffe6e6" : "#fff3cd";
+                            reportContainer.style.border = `1px solid ${report.status === "error" ? "#ffcccc" : "#ffeeba"}`;
+                            reportContainer.style.color = report.status === "error" ? "#cc0000" : "#856404";
+                            
+                            let html = `<h3>⚠️ Syntax & Integrity ${report.status === "error" ? "Errors" : "Warnings"}</h3><ul>`;
+                            
+                            if (report.errors && report.errors.length > 0) {
+                                report.errors.forEach(err => html += `<li><strong>Error:</strong> ${err}</li>`);
+                            }
+                            if (report.warnings && report.warnings.length > 0) {
+                                report.warnings.forEach(warn => html += `<li><strong>Warning:</strong> ${warn}</li>`);
+                            }
+                            
+                            html += `</ul>`;
+                            reportContainer.innerHTML = html;
+                        }
+                    }
+                } catch (err) {
+                    console.warn("Syntax report was not found or couldn't be parsed.", err);
+                }
+
+                // --- 2. Generate Output File Links ---
+                const downloadsDiv = document.getElementById('downloads');
+                downloadsDiv.innerHTML = ''; 
+
+                const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
+                
+                let projectName = "Project";
+                let groupNum = 0;
+                
+                if (projOverride) {
+                    projectName = projOverride;
+                } else {
+                    const parts = baseName.split(/[-_.]/);
+                    if (parts.length >= 2) {
+                        projectName = parts[0];
+                        const match = parts[1].match(/\d+/);
+                        if (match) {
+                            groupNum = parseInt(match[0], 10);
+                        }
+                    }
+                }
+
+                if (groupOverride) {
+                    groupNum = parseInt(groupOverride, 10);
+                }
+
+                let outFiles = [];
+                if (targetFilter) {
+                    outFiles = [
+                        `${projectName}_b${groupNum}.html`
+                    ];
+                } else {
+                    outFiles = [
+                        `tree${groupNum}.txt`,
+                        `${projectName}_s${groupNum}.svg`,
+                        `${projectName}_s${groupNum}.html`,
+                        `${projectName}_b${groupNum}.html`,
+                        `${projectName}_g${groupNum}.html`
+                    ];
+                }
+
+                outFiles.forEach(outFileName => {
+                    try {
+                        const outData = FS.readFile(outFileName);
+                        const blob = new Blob([outData], { type: outFileName.endsWith('.svg') ? 'image/svg+xml' : (outFileName.endsWith('.html') ? 'text/html' : 'text/plain') });
+                        const url = URL.createObjectURL(blob);
+
+                        const fileRow = document.createElement('div');
+                        fileRow.className = 'file-item';
+
+                        const nameLabel = document.createElement('span');
+                        nameLabel.className = 'file-name';
+                        nameLabel.textContent = outFileName;
+
+                        const btnGroup = document.createElement('div');
+                        btnGroup.className = 'btn-group';
+
+                        const viewBtn = document.createElement('button');
+                        viewBtn.className = 'action-btn view-link';
+                        viewBtn.textContent = '👁️ View';
+                        viewBtn.onclick = function() {
+                            openViewer(url);
+                        };
+
+                        const downloadBtn = document.createElement('a');
+                        downloadBtn.href = url;
+                        downloadBtn.download = outFileName;
+                        downloadBtn.className = 'action-btn download-link';
+                        downloadBtn.textContent = '⬇️ Download';
+
+                        btnGroup.appendChild(viewBtn);
+                        btnGroup.appendChild(downloadBtn);
+
+                        fileRow.appendChild(nameLabel);
+                        fileRow.appendChild(btnGroup);
+                        
+                        downloadsDiv.appendChild(fileRow);
+                        
+                    } catch (err) {
+                        console.warn(`File ${outFileName} was not generated.`, err);
+                    }
+                });
+
+            }, 50); // <-- setTimeout closes here
+        };
+
+        reader.readAsArrayBuffer(file);
+    }
+
+    function openViewer(url) {
+        document.getElementById('viewer-container').style.display = 'flex';
+        document.getElementById('file-viewer').src = url;
+        document.body.style.overflow = 'hidden'; 
+    }
+
+    function closeViewer() {
+        document.getElementById('viewer-container').style.display = 'none';
+        document.getElementById('file-viewer').src = '';
+        document.body.style.overflow = 'auto'; 
+    }
+</script>
+
+</body>
+</html>

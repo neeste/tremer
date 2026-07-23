@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="756" height="602" style="background-color: white;">
+<text x="706.0" y="30.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="end">23-Jul-2026</text>
+<path d="M 378.0 118.0 L 378.0 138.0 L 378.0 138.0 L 378.0 158.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 378.0 188.0 L 378.0 208.0 L 202.0 208.0 L 202.0 295.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 202.0 325.0 L 202.0 345.0 L 114.0 345.0 L 114.0 408.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 202.0 325.0 L 202.0 345.0 L 290.0 345.0 L 290.0 408.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 290.0 438.0 L 290.0 458.0 L 290.0 458.0 L 290.0 490.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 378.0 188.0 L 378.0 208.0 L 554.0 208.0 L 554.0 295.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 554.0 325.0 L 554.0 345.0 L 466.0 345.0 L 466.0 408.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 466.0 438.0 L 466.0 458.0 L 466.0 458.0 L 466.0 490.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 554.0 325.0 L 554.0 345.0 L 642.0 345.0 L 642.0 408.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<path d="M 642.0 438.0 L 642.0 458.0 L 642.0 458.0 L 642.0 490.0" fill="none" stroke="#8ab4f8" stroke-width="3"/>
+<rect x="314.0" y="50.0" width="128" height="68.0" fill="#ADD8E6" stroke="#87CEEB" stroke-width="2" rx="5" ry="5"/>
+<text x="378.0" y="70.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">Group 4</text>
+<text x="378.0" y="88.0" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">8 kits</text>
+<text x="378.0" y="106.0" font-family="Arial" font-size="12" fill="#333" text-anchor="middle">Haplogroup R</text>
+<text x="432.0" y="132.0" font-family="Arial" font-size="11" fill="#555" text-anchor="end">8</text>
+<rect x="314.0" y="158.0" width="128" height="30.0" fill="#ADD8E6" stroke="#87CEEB" stroke-width="2" rx="5" ry="5"/>
+<text x="378.0" y="178.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">BY33528.1127</text>
+<text x="432.0" y="202.0" font-family="Arial" font-size="11" fill="#555" text-anchor="end">8</text>
+<rect x="138.0" y="295.0" width="128" height="30.0" fill="#ADD8E6" stroke="#87CEEB" stroke-width="2" rx="5" ry="5"/>
+<text x="202.0" y="315.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">BY33530.1740</text>
+<text x="256.0" y="339.0" font-family="Arial" font-size="11" fill="#555" text-anchor="end">4</text>
+<rect x="50.0" y="408.0" width="128" height="42.0" fill="#FFFFE0" stroke="#FFC0CB" stroke-width="2" rx="5" ry="5"/>
+<text x="60.0" y="424.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">274660</text>
+<text x="168.0" y="424.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">537</text>
+<text x="60.0" y="440.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">354359</text>
+<text x="168.0" y="440.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">561</text>
+<rect x="226.0" y="408.0" width="128" height="30.0" fill="#ADD8E6" stroke="#87CEEB" stroke-width="2" rx="5" ry="5"/>
+<text x="290.0" y="428.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">STR01.1830</text>
+<text x="236.0" y="398" font-family="monospace" font-size="10" fill="#555" text-anchor="start">CDYb=41-&gt;40</text>
+<text x="344.0" y="398" font-family="monospace" font-size="10" fill="#555" text-anchor="end">2</text>
+<text x="236.0" y="386" font-family="monospace" font-size="10" fill="#555" text-anchor="start">712=22-&gt;23</text>
+<text x="344.0" y="386" font-family="monospace" font-size="10" fill="#555" text-anchor="end">2</text>
+<text x="236.0" y="374" font-family="monospace" font-size="10" fill="#555" text-anchor="start">FTY530=10-&gt;11</text>
+<text x="344.0" y="374" font-family="monospace" font-size="10" fill="#555" text-anchor="end">2</text>
+<text x="344.0" y="452.0" font-family="Arial" font-size="11" fill="#555" text-anchor="end">2</text>
+<rect x="226.0" y="490.0" width="128" height="42.0" fill="#FFFFE0" stroke="#FFC0CB" stroke-width="2" rx="5" ry="5"/>
+<text x="236.0" y="506.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">1041032</text>
+<text x="344.0" y="506.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">803</text>
+<text x="236.0" y="522.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">185868</text>
+<text x="344.0" y="522.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">811</text>
+<rect x="490.0" y="295.0" width="128" height="30.0" fill="#ADD8E6" stroke="#87CEEB" stroke-width="2" rx="5" ry="5"/>
+<text x="554.0" y="315.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">BY181041.1391</text>
+<text x="500.0" y="285" font-family="monospace" font-size="10" fill="#555" text-anchor="start">607=14-&gt;15</text>
+<text x="608.0" y="285" font-family="monospace" font-size="10" fill="#555" text-anchor="end">4</text>
+<text x="500.0" y="273" font-family="monospace" font-size="10" fill="#555" text-anchor="start">511=10-&gt;11</text>
+<text x="608.0" y="273" font-family="monospace" font-size="10" fill="#555" text-anchor="end">3</text>
+<text x="500.0" y="261" font-family="monospace" font-size="10" fill="#555" text-anchor="start">413a=22-&gt;23</text>
+<text x="608.0" y="261" font-family="monospace" font-size="10" fill="#555" text-anchor="end">2</text>
+<text x="500.0" y="249" font-family="monospace" font-size="10" fill="#555" text-anchor="start">446=11-&gt;12</text>
+<text x="608.0" y="249" font-family="monospace" font-size="10" fill="#555" text-anchor="end">3</text>
+<text x="500.0" y="237" font-family="monospace" font-size="10" fill="#555" text-anchor="start">504=16-&gt;17</text>
+<text x="608.0" y="237" font-family="monospace" font-size="10" fill="#555" text-anchor="end">2</text>
+<text x="500.0" y="225" font-family="monospace" font-size="10" fill="#555" text-anchor="start">117=13-&gt;12</text>
+<text x="608.0" y="225" font-family="monospace" font-size="10" fill="#555" text-anchor="end">2</text>
+<text x="608.0" y="339.0" font-family="Arial" font-size="11" fill="#555" text-anchor="end">4</text>
+<rect x="402.0" y="408.0" width="128" height="30.0" fill="#ADD8E6" stroke="#87CEEB" stroke-width="2" rx="5" ry="5"/>
+<text x="466.0" y="428.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">DavidMcNeely.1751</text>
+<text x="520.0" y="452.0" font-family="Arial" font-size="11" fill="#555" text-anchor="end">2</text>
+<rect x="402.0" y="490.0" width="128" height="42.0" fill="#FFFFE0" stroke="#FFC0CB" stroke-width="2" rx="5" ry="5"/>
+<text x="412.0" y="506.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">139901</text>
+<text x="520.0" y="506.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">37</text>
+<text x="412.0" y="522.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">89948</text>
+<text x="520.0" y="522.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">781</text>
+<rect x="578.0" y="408.0" width="128" height="30.0" fill="#ADD8E6" stroke="#87CEEB" stroke-width="2" rx="5" ry="5"/>
+<text x="642.0" y="428.0" font-family="Arial" font-size="12" font-weight="bold" fill="#333" text-anchor="middle">STR02.1481</text>
+<text x="588.0" y="398" font-family="monospace" font-size="10" fill="#555" text-anchor="start">389ii-i=31-&gt;29</text>
+<text x="696.0" y="398" font-family="monospace" font-size="10" fill="#555" text-anchor="end">1</text>
+<text x="588.0" y="386" font-family="monospace" font-size="10" fill="#555" text-anchor="start">715=24-&gt;23</text>
+<text x="696.0" y="386" font-family="monospace" font-size="10" fill="#555" text-anchor="end">1</text>
+<text x="588.0" y="374" font-family="monospace" font-size="10" fill="#555" text-anchor="start">635=23-&gt;24</text>
+<text x="696.0" y="374" font-family="monospace" font-size="10" fill="#555" text-anchor="end">1</text>
+<text x="588.0" y="362" font-family="monospace" font-size="10" fill="#555" text-anchor="start">310=10-&gt;9</text>
+<text x="696.0" y="362" font-family="monospace" font-size="10" fill="#555" text-anchor="end">1</text>
+<text x="696.0" y="452.0" font-family="Arial" font-size="11" fill="#555" text-anchor="end">2</text>
+<rect x="578.0" y="490.0" width="128" height="42.0" fill="#FFFFE0" stroke="#FFC0CB" stroke-width="2" rx="5" ry="5"/>
+<text x="588.0" y="506.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">256711</text>
+<text x="696.0" y="506.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">67</text>
+<text x="588.0" y="522.0" font-family="Arial" font-size="11" fill="#000" text-anchor="start">327004</text>
+<text x="696.0" y="522.0" font-family="Arial" font-size="11" fill="#000" text-anchor="end">528</text>
+</svg>
