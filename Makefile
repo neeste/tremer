@@ -28,6 +28,9 @@ em :
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
 
+strmerge: tools/strmerge.c
+	$(CC) $(CFLAGS) -o strmerge tools/strmerge.c
+
 # Compile for WebAssembly
 wasm: $(SRC) run
 	@echo "Compiling C code to WebAssembly..."
@@ -74,6 +77,6 @@ relaxed: $(TARGET)
 
 # Clean up the compiled executable and the generated output files
 clean:
-	rm -f $(TARGET) tree*.txt *_*.{svg,png,html} tremer.{js,wasm}
+	rm -f $(TARGET) strmerge tree*.txt *_*.{svg,png,html} tremer.{js,wasm}
 	rm -f *.json
 
