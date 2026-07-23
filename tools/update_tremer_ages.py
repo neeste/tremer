@@ -74,7 +74,7 @@ def fetch_ftdna_age(snp_name, primary_haplo, retries=4):
                     
             except urllib.error.HTTPError as e:
                 last_error_code = e.code
-                if e.code == 404:
+                if e.code == 404 or e.code == 403:
                     break 
                 else:
                     wait_time = 15 * (attempt + 1)
@@ -86,7 +86,7 @@ def fetch_ftdna_age(snp_name, primary_haplo, retries=4):
                 print(f"     [Connection error: {e}. Pausing {wait_time}s to cool down...]")
                 time.sleep(wait_time)
         
-        if last_error_code != 404:
+        if last_error_code != 404 and last_error_code != 403:
             return None 
             
     return -1

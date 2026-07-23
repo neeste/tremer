@@ -814,11 +814,7 @@ void evaluate_reassignment_targets_recursive(TreeNode* target, int kit_idx, int 
     if (!target) return;
     if (target->type != NODE_DISTANCE && target != current_node) {
         if (is_acceptable_target(kit_idx, target)) {
-            int dist = 0;
-            for (int m = 0; m < total_markers; m++) {
-                int kv = kits[kit_idx].str_values[m], nv = target->local_modal[m];
-                if (kv > 0 && nv > 0 && kv != nv) dist++;
-            }
+            int dist = calculate_str_distance(kits[kit_idx].str_values, target->local_modal, total_markers);
             if (dist < *min_dist || (relaxed_mode && dist == *min_dist && *best_node && is_tree_node_ancestor(*best_node, target))) { *min_dist = dist; *best_node = target; }
         }
     }
@@ -829,12 +825,7 @@ void find_closest_node_recursive(TreeNode* node, int kit_idx, int total_markers,
     if (node == NULL) return;
     if (node != root_node && (node->type == NODE_SNP || node->type == NODE_GEN || node->type == NODE_MERGED || node->type == NODE_STR_BRANCH)) {
         if (is_acceptable_target(kit_idx, node)) { 
-            int dist = 0;
-            for (int m = 0; m < total_markers; m++) {
-                int k_val = kits[kit_idx].str_values[m];
-                int n_val = node->local_modal[m];
-                if (k_val > 0 && n_val > 0 && k_val != n_val) dist++;
-            }
+            int dist = calculate_str_distance(kits[kit_idx].str_values, node->local_modal, total_markers);
             if (dist < *min_dist || (relaxed_mode && dist == *min_dist && *best_node && is_tree_node_ancestor(*best_node, node))) { *min_dist = dist; *best_node = node; }
         }
     }
@@ -1257,8 +1248,7 @@ void check_kits_and_reassign(int total_markers) {
             TreeNode* current_node = NULL; int current_idx = -1; find_kit_in_active_tree(root_node, k, &current_node, &current_idx);
             if (!current_node) continue;
             int is_curr_ok = is_acceptable_target(k, current_node);
-            int current_dist = 0;
-            for (int m = 0; m < total_markers; m++) { int kv = kits[k].str_values[m], nv = current_node->local_modal[m]; if (kv > 0 && nv > 0 && kv != nv) current_dist++; }
+            int current_dist = calculate_str_distance(kits[k].str_values, current_node->local_modal, total_markers);
             int min_dist = is_curr_ok ? current_dist : 999999; TreeNode* best_node = is_curr_ok ? current_node : NULL;
             evaluate_reassignment_targets_recursive(root_node, k, total_markers, current_node, &best_node, &min_dist);
             if (best_node && best_node != current_node) {
@@ -1299,11 +1289,68 @@ void check_kits_and_reassign(int total_markers) {
     report_tree_topology_conflicts();
 }
 
+int get_marker_weight(const char* name) {
+    if (strstr(name, "CDY") || strstr(name, "464") || strstr(name, "456") || strstr(name, "570") || 
+        strstr(name, "576") || strstr(name, "449") || strstr(name, "413") || strstr(name, "511")) {
+        return 20; // Fast
+    }
+    if (strstr(name, "385") || strstr(name, "390") || strstr(name, "439") || strstr(name, "389") || 
+        strstr(name, "458") || strstr(name, "447") || strstr(name, "448") || strstr(name, "YCAII") || 
+        strstr(name, "459") || strstr(name, "GATAH4") || strstr(name, "GataH4")) {
+        return 50; // Medium
+    }
+    return 100; // Slow / Default
+}
+
 int calculate_str_distance(int strA[], int strB[], int total_markers) {
     int distance = 0;
+    int processed[MAX_MARKERS] = {0};
+
     for (int i = 0; i < total_markers; i++) {
-        if (strA[i] != STR_MISSING && strB[i] != STR_MISSING && strA[i] > 0 && strB[i] > 0) {
-            distance += abs(strA[i] - strB[i]);
+        if (processed[i]) continue;
+        
+        char* name = marker_names[i];
+        int weight = get_marker_weight(name);
+        int len = strlen(name);
+        
+        // Check if it's a multi-copy marker (ends in a, b, c, d, e, f)
+        int is_multi = 0;
+        char base_name[128];
+        if (len > 1 && name[len-1] >= 'a' && name[len-1] <= 'f') {
+            is_multi = 1;
+            strcpy(base_name, name);
+            base_name[len-1] = '\0';
+        }
+
+        if (is_multi) {
+            int group_indices[10];
+            int group_count = 0;
+            
+            for (int j = i; j < total_markers; j++) {
+                char* j_name = marker_names[j];
+                int j_len = strlen(j_name);
+                if (j_len > 1 && strncmp(j_name, base_name, j_len-1) == 0 && (j_name[j_len-1] >= 'a' && j_name[j_len-1] <= 'f')) {
+                    group_indices[group_count++] = j;
+                    processed[j] = 1;
+                }
+            }
+            
+            int differs = 0;
+            for (int k = 0; k < group_count; k++) {
+                int idx = group_indices[k];
+                if (strA[idx] != STR_MISSING && strB[idx] != STR_MISSING && strA[idx] > 0 && strB[idx] > 0) {
+                    if (strA[idx] != strB[idx]) {
+                        differs = 1;
+                        break;
+                    }
+                }
+            }
+            if (differs) distance += weight;
+        } else {
+            processed[i] = 1;
+            if (strA[i] != STR_MISSING && strB[i] != STR_MISSING && strA[i] > 0 && strB[i] > 0) {
+                distance += abs(strA[i] - strB[i]) * weight;
+            }
         }
     }
     return distance;
