@@ -1,2 +1,5 @@
 .DS_Store
 Neely_*
+debug_*.txt
+*_debug.txt
+final_*.txt

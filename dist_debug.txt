@@ -1,2 +1,0 @@
-INITIAL 911378 on JohnNeely, dist = 8, min_dist = 8
-Full tree output generated.
