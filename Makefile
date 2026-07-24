@@ -113,8 +113,7 @@ relaxed: $(TARGET)
 clean:
 	rm -rf $(TARGET) strmerge strdata tree*.txt *_*.{svg,png,html} tremer.{js,wasm} strdata_out *.json
 
-# Deploy to Site5 web host
+# Deploy to Site5 web host via FTP
 deploy:
-	@echo "Deploying to Site5..."
-	rsync -avz -e "ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes" admin Neely_project wasm $(DEPLOY_HOST):$(DEPLOY_PATH)/
-	@echo "Deployment complete!"
+	@echo "Starting FTP Deployment..."
+	python3 tools/ftp_deploy.py
