@@ -20,7 +20,7 @@ YSTR = ../YSTR
 PROJ = Neely_project
 
 # Deployment configuration
-DEPLOY_HOST = tremer_deploy@bonkachen.com
+DEPLOY_HOST = audres@bonkachen.com
 DEPLOY_PATH = public_html/tremer
 
 GROUPS := $(patsubst $(YSTR)/group_%,%,$(wildcard $(YSTR)/group_*))
