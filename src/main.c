@@ -34,7 +34,7 @@ TreeNode* search_tree_for_target(TreeNode* node, const char* target) {
 
     // 1. Check SNP side (Base name and Date-appended name)
     char snp_display[MAX_NODE_NAME_LEN + 32];
-    if (node->date > 0 && node->type != NODE_STR && node->type != NODE_STR_BRANCH) {
+    if (node->date > 0) {
         sprintf(snp_display, "%s.%d", node->name, node->date);
     } else {
         strcpy(snp_display, node->name);
