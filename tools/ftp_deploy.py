@@ -69,7 +69,15 @@ if __name__ == "__main__":
     print(f"Deployment Target: {host}")
     print(f"FTP Username:      {user}")
     
-    password = getpass.getpass("FTP Password: ")
+    password = None
+    secret_file = ".deploy_secret"
+    if os.path.exists(secret_file):
+        with open(secret_file, "r") as f:
+            password = f.read().strip()
+            
+    if not password:
+        password = getpass.getpass("FTP Password: ")
+        
     directories = ['admin', 'Neely_project', 'wasm']
     
     try:

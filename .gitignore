@@ -15,3 +15,4 @@ tree*.txt
 test_*.txt
 strdata_out/
 *.log
+.deploy_secret
