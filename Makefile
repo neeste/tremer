@@ -19,6 +19,10 @@ run : Neely
 YSTR = ../YSTR
 PROJ = Neely_project
 
+# Deployment configuration
+DEPLOY_HOST = audres@bonkachen.com
+DEPLOY_PATH = public_html/tremer
+
 GROUPS := $(patsubst $(YSTR)/group_%,%,$(wildcard $(YSTR)/group_*))
 $(foreach grp,$(GROUPS),$(eval strdata_out/strdata$(grp).txt: $(wildcard $(YSTR)/group_$(grp)/*.csv)))
 
@@ -108,3 +112,9 @@ relaxed: $(TARGET)
 # Clean up the compiled executable and the generated output files
 clean:
 	rm -rf $(TARGET) strmerge strdata tree*.txt *_*.{svg,png,html} tremer.{js,wasm} strdata_out *.json
+
+# Deploy to Site5 web host
+deploy:
+	@echo "Deploying to Site5..."
+	rsync -avz admin Neely_project wasm $(DEPLOY_HOST):$(DEPLOY_PATH)/
+	@echo "Deployment complete!"
