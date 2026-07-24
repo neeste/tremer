@@ -45,15 +45,9 @@ def deploy(host, user, password, directories):
                 except ftplib.error_perm:
                     pass # Directory already exists
         
-        # Check size to skip uploading unchanged files
-        try:
-            remote_size = ftp.size(remote)
-            local_size = os.path.getsize(local)
-            if remote_size == local_size:
-                skipped += 1
-                continue
-        except Exception:
-            pass # File doesn't exist remotely or SIZE not supported
+        # Removed size-based skipping because compiled .wasm files can often have the 
+        # exact same byte size even when the C code inside them changes! 
+        # This forces a fresh upload of all files.
             
         print(f"[{i+1}/{total}] Uploading {remote}...")
         with open(local, 'rb') as f:
