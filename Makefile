@@ -116,5 +116,5 @@ clean:
 # Deploy to Site5 web host
 deploy:
 	@echo "Deploying to Site5..."
-	rsync -avz admin Neely_project wasm $(DEPLOY_HOST):$(DEPLOY_PATH)/
+	rsync -avz -e "ssh -i ~/.ssh/id_rsa -o IdentitiesOnly=yes" admin Neely_project wasm $(DEPLOY_HOST):$(DEPLOY_PATH)/
 	@echo "Deployment complete!"
