@@ -1,8 +1,17 @@
 .DS_Store
+__pycache__/
+
+# Compiled executables
+tremer_rewrite
+strdata
+strmerge
+
+# Output artifacts
 Neely_*
 debug_*.txt
 *_debug.txt
 final_*.txt
-save/
 tree*.txt
 test_*.txt
+strdata_out/
+*.log

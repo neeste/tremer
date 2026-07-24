@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "../fallback_labels.h"
+#include "../src/fallback_labels.h"
 
 #define MAXFNL 256
 
@@ -23,7 +23,7 @@ void normalize_marker_name(const char* raw, char* norm) {
 }
 
 int csv_read(char *fn, char **kitnam, int **kitstr, int *max_idx_out) {
-    char header[8192], data[8192], s[8192];
+    char header[1048576], data[1048576], s[8192];
     char *b, *e;
     FILE *fp;
 
@@ -47,8 +47,8 @@ int csv_read(char *fn, char **kitnam, int **kitstr, int *max_idx_out) {
     if (!fgets(data, sizeof(data), fp)) { fclose(fp); return 0; }
     fclose(fp);
 
-    int col_mapping[1024]; // maps CSV column index to base fallback_labels index (-1 if skip)
-    for(int i = 0; i < 1024; i++) col_mapping[i] = -1;
+    int col_mapping[4096]; // maps CSV column index to base fallback_labels index (-1 if skip)
+    for(int i = 0; i < 4096; i++) col_mapping[i] = -1;
     
     char *hptr = header;
     int col_idx = 0;
@@ -112,7 +112,7 @@ int csv_read(char *fn, char **kitnam, int **kitstr, int *max_idx_out) {
                 for(int k=0; k<n_lab; k++) { if(strcmp(norm_fallback[k], "389ii-i") == 0) { mapped = k; break; } }
             }
             
-            col_mapping[col_idx] = mapped;
+            if (col_idx < 4096) col_mapping[col_idx] = mapped;
         }
         col_idx++;
         if (*hptr == ',') hptr++;
@@ -142,7 +142,7 @@ int csv_read(char *fn, char **kitnam, int **kitstr, int *max_idx_out) {
         }
         tok[i] = '\0';
 
-        int mapped = col_mapping[col_idx];
+        int mapped = (col_idx < 4096) ? col_mapping[col_idx] : -1;
         if (mapped != -1) {
             char ctok[256] = {0};
             int ci = 0;

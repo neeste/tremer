@@ -4,7 +4,7 @@ CFLAGS = -Wall -O3
 
 # Executable and source file names
 TARGET = tremer_rewrite
-SRC = main.c parse.c tree_logic.c render_svg.c render_text.c
+SRC = src/main.c src/parse.c src/tree_logic.c src/render_svg.c src/render_text.c
 
 # Automatically gather input files that start with "Neely_s" and end with ".txt"
 Neely_INPUTS = $(wildcard Neely_project/Neely_s*.txt)
@@ -19,28 +19,31 @@ run : Neely
 YSTR = ../YSTR
 PROJ = Neely_project
 
-build: strmerge strdata
-	@echo "Merging STRs from $(YSTR)..."
-	@for dir in $(YSTR)/group_*; do \
-		if [ -d "$$dir" ]; then \
-			grp=$$(basename "$$dir" | cut -d'_' -f2); \
-			if ls $$dir/*.csv >/dev/null 2>&1; then \
-				./strmerge -o strdata$${grp}.txt $$dir/*.csv; \
-			fi \
-		fi \
-	done
-	@if [ -f strdata1.txt ] && [ -f strdata2.txt ]; then \
-		cat strdata1.txt strdata2.txt > strdata12.txt; \
-	fi
-	@echo "Updating project files with new STR data..."
-	@for file in $(PROJ)/Neely_s*.txt; do \
-		if [ -f "$$file" ]; then \
-			./strdata -o tmp_$$(basename $$file) $$file; \
-			mv tmp_$$(basename $$file) $$file; \
-		fi \
-	done
-	@rm -f strdata*.txt tmp_*.txt
+GROUPS := $(patsubst $(YSTR)/group_%,%,$(wildcard $(YSTR)/group_*))
+$(foreach grp,$(GROUPS),$(eval strdata_out/strdata$(grp).txt: $(wildcard $(YSTR)/group_$(grp)/*.csv)))
+
+build: strdata_out $(Neely_INPUTS)
 	@echo "STR Build complete!"
+
+strdata_out:
+	@mkdir -p strdata_out
+
+strdata_out/strdata12.txt: strdata_out/strdata1.txt strdata_out/strdata2.txt | strdata_out
+	@echo "Creating strdata12.txt..."
+	@cat strdata_out/strdata1.txt strdata_out/strdata2.txt > strdata_out/strdata12.txt
+
+strdata_out/strdata%.txt: strmerge | strdata_out
+	@if ls $(YSTR)/group_$*/*.csv >/dev/null 2>&1; then \
+		echo "Merging STRs for group $*..."; \
+		./strmerge -o $@ $(YSTR)/group_$*/*.csv; \
+	else \
+		touch $@; \
+	fi
+
+$(PROJ)/Neely_s%.txt: strdata_out/strdata%.txt strdata
+	@echo "Updating $@ with new STR data..."
+	@./strdata -o tmp_$(notdir $@) $@
+	@mv tmp_$(notdir $@) $@
 
 update:
 	@echo "Updating SNP ages..."
@@ -104,5 +107,4 @@ relaxed: $(TARGET)
 
 # Clean up the compiled executable and the generated output files
 clean:
-	rm -f $(TARGET) strmerge strdata tree*.txt *_*.{svg,png,html} tremer.{js,wasm}
-	rm -f *.json strdata*.txt
+	rm -rf $(TARGET) strmerge strdata tree*.txt *_*.{svg,png,html} tremer.{js,wasm} strdata_out *.json

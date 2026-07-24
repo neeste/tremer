@@ -58,14 +58,14 @@
     var Module = {
         locateFile: function(path) {
             if (path.endsWith('.wasm')) {
-                return '../wasm/' + path;
+                return '../wasm/' + path + '?v=2';
             }
             return path;
         }
     };
 </script>
 
-    <script src="../wasm/tremer.js"></script>
+    <script src="../wasm/tremer.js?v=2"></script>
 </head>
 <body>
 
@@ -154,7 +154,7 @@
             const data = new Uint8Array(e.target.result);
             FS.writeFile(file.name, data);
 
-            let args = [file.name];
+            let args = [];
             
             const targetFilter = document.getElementById('targetFilter').value.trim();
             if (targetFilter) {
@@ -174,6 +174,9 @@
             if (document.getElementById('relaxedMode').checked) {
                 args.push('-relaxed');
             }
+
+            // Finally add the input file
+            args.push(file.name);
 
             // --- PAUSE EXECUTION TO ALLOW UI TO REPAINT ---
             setTimeout(function() {

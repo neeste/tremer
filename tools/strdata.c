@@ -53,6 +53,11 @@ main(int argc, char **argv)
             printf("include %s\n", nfn);
             nfp = fopen(nfn, "r");
             if (nfp == NULL) {
+                char alt[MAXFNL];
+                snprintf(alt, MAXFNL, "strdata_out/%s", nfn);
+                nfp = fopen(alt, "r");
+            }
+            if (nfp == NULL) {
                 printf("WARNING: can't open %s\n",nfn);
             } else {
                 fputs(line, tfp);         // copy input line
@@ -65,6 +70,7 @@ main(int argc, char **argv)
                         //fputs(line, tfp);
                     }
                 }
+                fclose(nfp);
             }
         }
         fputs(line, tfp);
