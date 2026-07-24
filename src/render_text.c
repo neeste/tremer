@@ -344,24 +344,9 @@ void generate_html_filtered_table_output(const char* filename, TreeNode* root) {
     char display_name[MAX_NODE_NAME_LEN * 2] = "";
     
     if (root->type == NODE_MERGED && strlen(root->gen_name) > 0) {
-        // Format both the SNP half and the GEN half safely
-        char snp_part[MAX_NODE_NAME_LEN];
-        char gen_part[MAX_NODE_NAME_LEN];
-        
-        if (root->date > 0) sprintf(snp_part, "%s.%d", root->name, root->date);
-        else strcpy(snp_part, root->name);
-        
-        if (root->gen_date > 0) sprintf(gen_part, "%s.%d", root->gen_name, root->gen_date);
-        else strcpy(gen_part, root->gen_name);
-        
-        sprintf(display_name, "%s %s", snp_part, gen_part);
+        sprintf(display_name, "%s %s", root->name, root->gen_name);
     } else {
-        // Standard unmerged node formatting
-        if (root->date > 0) {
-            sprintf(display_name, "%s.%d", root->name, root->date);
-        } else {
-            strcpy(display_name, root->name);
-        }
+        strcpy(display_name, root->name);
     }
 
     // ===============================================
