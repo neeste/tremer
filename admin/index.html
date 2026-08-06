@@ -72,8 +72,10 @@
 <div class="container">
     <div class="nav-menu">
         <a href="about.html">About</a>
+        <a href="tree_logic.html">Tree Logic</a>
         <a href="input_format.html">Input format</a>
         <a href="strmerge.html">STR merge</a>
+        <a href="sapp.html">SAPP Integration</a>
     </div>
 
     <h1>TREMER</h1>
@@ -129,182 +131,181 @@
             return;
         }
 
-        // --- NEW FIX: DELETE OLD JSON REPORTS FROM VIRTUAL FILESYSTEM ---
-        try {
-            const existingFiles = FS.readdir('.');
-            existingFiles.forEach(f => {
-                if (f.endsWith('.json') && f.includes('_report_')) {
-                    FS.unlink(f); // This deletes the file from Emscripten's memory!
-                }
-            });
-        } catch (e) {
-            console.warn("Could not clean up old report files.");
-        }
-
-        // --- CLEAR PREVIOUS STATE IMMEDIATELY ---
         document.getElementById('report-container').style.display = 'none';
         document.getElementById('report-container').innerHTML = '';
-        document.getElementById('downloads').innerHTML = 'Generating...';
+        const downloadsDiv = document.getElementById('downloads');
+        downloadsDiv.innerHTML = 'Generating...';
         document.getElementById('output-section').style.display = 'block';
 
         const file = fileInput.files[0];
         const reader = new FileReader();
 
         reader.onload = function(e) {
-            const data = new Uint8Array(e.target.result);
-            FS.writeFile(file.name, data);
+            try {
+                // Determine the correct FS object (Emscripten exports it differently based on version/flags)
+                const fsObj = (typeof FS !== 'undefined') ? FS : (Module.FS ? Module.FS : null);
+                if (!fsObj) {
+                    throw new Error("Filesystem module (FS) is not loaded or not exported by WebAssembly.");
+                }
 
-            let args = [];
-            
-            const targetFilter = document.getElementById('targetFilter').value.trim();
-            if (targetFilter) {
-                args.push('-n', targetFilter);
-            }
-            
-            const projOverride = document.getElementById('projOverride').value.trim();
-            if (projOverride) {
-                args.push('-p', projOverride);
-            }
-
-            const groupOverride = document.getElementById('groupOverride').value.trim();
-            if (groupOverride) {
-                args.push('-g', groupOverride);
-            }
-            
-            if (document.getElementById('relaxedMode').checked) {
-                args.push('-relaxed');
-            }
-
-            // Finally add the input file
-            args.push(file.name);
-
-            // --- PAUSE EXECUTION TO ALLOW UI TO REPAINT ---
-            setTimeout(function() {
-                
-                // Run the C Engine
-                Module.callMain(args);
-
-                // --- 1. Check for Syntax JSON Report ---
-                const reportContainer = document.getElementById('report-container');
-                reportContainer.style.display = 'none';
-                reportContainer.innerHTML = '';
-
+                // Clean up old reports
                 try {
-                    // Dynamically find the JSON file to avoid naming mismatches
-                    const dir = FS.readdir('.');
-                    const jsonFileName = dir.find(f => f.endsWith('.json') && f.includes('_report_'));
-                    
-                    if (jsonFileName) {
-                        const jsonStr = FS.readFile(jsonFileName, { encoding: 'utf8' });
-                        const report = JSON.parse(jsonStr);
-                        
-                        if (report.status === "error" || report.status === "warning") {
-                            reportContainer.style.display = 'block';
-                            reportContainer.style.backgroundColor = report.status === "error" ? "#ffe6e6" : "#fff3cd";
-                            reportContainer.style.border = `1px solid ${report.status === "error" ? "#ffcccc" : "#ffeeba"}`;
-                            reportContainer.style.color = report.status === "error" ? "#cc0000" : "#856404";
-                            
-                            let html = `<h3>⚠️ Syntax & Integrity ${report.status === "error" ? "Errors" : "Warnings"}</h3><ul>`;
-                            
-                            if (report.errors && report.errors.length > 0) {
-                                report.errors.forEach(err => html += `<li><strong>Error:</strong> ${err}</li>`);
-                            }
-                            if (report.warnings && report.warnings.length > 0) {
-                                report.warnings.forEach(warn => html += `<li><strong>Warning:</strong> ${warn}</li>`);
-                            }
-                            
-                            html += `</ul>`;
-                            reportContainer.innerHTML = html;
+                    const existingFiles = fsObj.readdir('.');
+                    existingFiles.forEach(f => {
+                        if (f.endsWith('.json') && f.includes('_report_')) {
+                            fsObj.unlink(f);
                         }
-                    }
+                    });
                 } catch (err) {
-                    console.warn("Syntax report was not found or couldn't be parsed.", err);
+                    console.warn("Could not clean up old report files:", err);
                 }
 
-                // --- 2. Generate Output File Links ---
-                const downloadsDiv = document.getElementById('downloads');
-                downloadsDiv.innerHTML = ''; 
+                const data = new Uint8Array(e.target.result);
+                fsObj.writeFile(file.name, data);
 
-                const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
+                let args = [];
+                const targetFilter = document.getElementById('targetFilter').value.trim();
+                if (targetFilter) args.push('-n', targetFilter);
                 
-                let projectName = "Project";
-                let groupNum = 0;
+                const projOverride = document.getElementById('projOverride').value.trim();
+                if (projOverride) args.push('-p', projOverride);
+
+                const groupOverride = document.getElementById('groupOverride').value.trim();
+                if (groupOverride) args.push('-g', groupOverride);
                 
-                if (projOverride) {
-                    projectName = projOverride;
-                } else {
-                    const parts = baseName.split(/[-_.]/);
-                    if (parts.length >= 2) {
-                        projectName = parts[0];
-                        const match = parts[1].match(/\d+/);
-                        if (match) {
-                            groupNum = parseInt(match[0], 10);
-                        }
-                    }
-                }
+                if (document.getElementById('relaxedMode').checked) args.push('-relaxed');
 
-                if (groupOverride) {
-                    groupNum = parseInt(groupOverride, 10);
-                }
+                args.push(file.name);
 
-                let outFiles = [];
-                if (targetFilter) {
-                    outFiles = [
-                        `${projectName}_b${groupNum}.html`
-                    ];
-                } else {
-                    outFiles = [
-                        `tree${groupNum}.txt`,
-                        `${projectName}_s${groupNum}.svg`,
-                        `${projectName}_s${groupNum}.html`,
-                        `${projectName}_b${groupNum}.html`,
-                        `${projectName}_g${groupNum}.html`
-                    ];
-                }
-
-                outFiles.forEach(outFileName => {
+                setTimeout(function() {
                     try {
-                        const outData = FS.readFile(outFileName);
-                        const blob = new Blob([outData], { type: outFileName.endsWith('.svg') ? 'image/svg+xml' : (outFileName.endsWith('.html') ? 'text/html' : 'text/plain') });
-                        const url = URL.createObjectURL(blob);
-
-                        const fileRow = document.createElement('div');
-                        fileRow.className = 'file-item';
-
-                        const nameLabel = document.createElement('span');
-                        nameLabel.className = 'file-name';
-                        nameLabel.textContent = outFileName;
-
-                        const btnGroup = document.createElement('div');
-                        btnGroup.className = 'btn-group';
-
-                        const viewBtn = document.createElement('button');
-                        viewBtn.className = 'action-btn view-link';
-                        viewBtn.textContent = '👁️ View';
-                        viewBtn.onclick = function() {
-                            openViewer(url);
-                        };
-
-                        const downloadBtn = document.createElement('a');
-                        downloadBtn.href = url;
-                        downloadBtn.download = outFileName;
-                        downloadBtn.className = 'action-btn download-link';
-                        downloadBtn.textContent = '⬇️ Download';
-
-                        btnGroup.appendChild(viewBtn);
-                        btnGroup.appendChild(downloadBtn);
-
-                        fileRow.appendChild(nameLabel);
-                        fileRow.appendChild(btnGroup);
+                        Module.callMain(args);
                         
-                        downloadsDiv.appendChild(fileRow);
+                        // Check for Syntax JSON Report
+                        const reportContainer = document.getElementById('report-container');
+                        try {
+                            const dir = fsObj.readdir('.');
+                            const jsonFileName = dir.find(f => f.endsWith('.json') && f.includes('_report_'));
+                            
+                            if (jsonFileName) {
+                                const jsonStr = fsObj.readFile(jsonFileName, { encoding: 'utf8' });
+                                const report = JSON.parse(jsonStr);
+                                
+                                if (report.status === "error" || report.status === "warning") {
+                                    reportContainer.style.display = 'block';
+                                    reportContainer.style.backgroundColor = report.status === "error" ? "#ffe6e6" : "#fff3cd";
+                                    reportContainer.style.border = `1px solid ${report.status === "error" ? "#ffcccc" : "#ffeeba"}`;
+                                    reportContainer.style.color = report.status === "error" ? "#cc0000" : "#856404";
+                                    
+                                    let html = `<h3>⚠️ Syntax & Integrity ${report.status === "error" ? "Errors" : "Warnings"}</h3><ul>`;
+                                    if (report.errors && report.errors.length > 0) {
+                                        report.errors.forEach(err => html += `<li><strong>Error:</strong> ${err}</li>`);
+                                    }
+                                    if (report.warnings && report.warnings.length > 0) {
+                                        report.warnings.forEach(warn => html += `<li><strong>Warning:</strong> ${warn}</li>`);
+                                    }
+                                    html += `</ul>`;
+                                    reportContainer.innerHTML = html;
+                                }
+                            }
+                        } catch (err) {
+                            console.warn("Syntax report was not found or couldn't be parsed.", err);
+                        }
+
+                        // Generate Output File Links
+                        downloadsDiv.innerHTML = ''; 
+                        const baseName = file.name.substring(0, file.name.lastIndexOf('.'));
                         
+                        let projectName = "Project";
+                        let groupNum = 0;
+                        
+                        if (projOverride) {
+                            projectName = projOverride;
+                        } else {
+                            const parts = baseName.split(/[-_.]/);
+                            if (parts.length >= 2) {
+                                projectName = parts[0];
+                                const match = parts[1].match(/\d+/);
+                                if (match) {
+                                    groupNum = parseInt(match[0], 10);
+                                }
+                            }
+                        }
+
+                        if (groupOverride) {
+                            groupNum = parseInt(groupOverride, 10);
+                        }
+
+                        let outFiles = [];
+                        if (targetFilter) {
+                            outFiles = [`${projectName}_b${groupNum}.html`];
+                        } else {
+                            outFiles = [
+                                `tree${groupNum}.txt`,
+                                `${projectName}_s${groupNum}.svg`,
+                                `${projectName}_s${groupNum}.html`,
+                                `${projectName}_b${groupNum}.html`,
+                                `${projectName}_g${groupNum}.html`
+                            ];
+                        }
+
+                        outFiles.forEach(outFileName => {
+                            try {
+                                const outData = fsObj.readFile(outFileName);
+                                const blob = new Blob([outData], { type: outFileName.endsWith('.svg') ? 'image/svg+xml' : (outFileName.endsWith('.html') ? 'text/html' : 'text/plain') });
+                                const url = URL.createObjectURL(blob);
+
+                                const fileRow = document.createElement('div');
+                                fileRow.className = 'file-item';
+                                const nameLabel = document.createElement('span');
+                                nameLabel.className = 'file-name';
+                                nameLabel.textContent = outFileName;
+
+                                const btnGroup = document.createElement('div');
+                                btnGroup.className = 'btn-group';
+
+                                const viewBtn = document.createElement('button');
+                                viewBtn.className = 'action-btn view-link';
+                                viewBtn.textContent = '👁️ View';
+                                viewBtn.onclick = function() { openViewer(url); };
+
+                                const downloadBtn = document.createElement('a');
+                                downloadBtn.href = url;
+                                downloadBtn.download = outFileName;
+                                downloadBtn.className = 'action-btn download-link';
+                                downloadBtn.textContent = '⬇️ Download';
+
+                                btnGroup.appendChild(viewBtn);
+                                btnGroup.appendChild(downloadBtn);
+
+                                fileRow.appendChild(nameLabel);
+                                fileRow.appendChild(btnGroup);
+                                
+                                downloadsDiv.appendChild(fileRow);
+                                
+                            } catch (err) {
+                                console.warn(`File ${outFileName} was not generated.`, err);
+                            }
+                        });
+                        
+                        if (downloadsDiv.innerHTML === '') {
+                            downloadsDiv.innerHTML = '<p style="color:red;">Error: No output files were generated. See console for details.</p>';
+                        }
+
                     } catch (err) {
-                        console.warn(`File ${outFileName} was not generated.`, err);
+                        downloadsDiv.innerHTML = `<p style="color:red;"><strong>Engine Crash:</strong> ${err.message}</p>`;
+                        console.error(err);
                     }
-                });
+                }, 50);
 
-            }, 50); // <-- setTimeout closes here
+            } catch (err) {
+                downloadsDiv.innerHTML = `<p style="color:red;"><strong>Upload Error:</strong> ${err.message}</p>`;
+                console.error(err);
+            }
+        };
+
+        reader.onerror = function() {
+            downloadsDiv.innerHTML = '<p style="color:red;">Error reading file.</p>';
         };
 
         reader.readAsArrayBuffer(file);

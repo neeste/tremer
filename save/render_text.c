@@ -214,7 +214,7 @@ void generate_html_table_output(const char* filename, TreeNode* root) {
     fprintf(f, "<h2>Group %d - STR Marker Values</h2>\n", global_group_num);
     fprintf(f, "<table>\n<thead>\n<tr><th class=\"kitid\">Kit ID</th>");
 
-    int num_markers = marker_count;
+    int num_markers = (marker_count < 111) ? marker_count : 111;
     for (int m = 0; m < num_markers; m++) {
         fprintf(f, "<th class=\"marker\"><span>%s</span></th>", marker_names[m]);
     }
@@ -344,8 +344,19 @@ void generate_html_filtered_table_output(const char* filename, TreeNode* root) {
     char display_name[MAX_NODE_NAME_LEN * 2] = "";
     
     if (root->type == NODE_MERGED && strlen(root->gen_name) > 0) {
-        sprintf(display_name, "%s %s", root->name, root->gen_name);
+        // Format both the SNP half and the GEN half safely
+        char snp_part[MAX_NODE_NAME_LEN];
+        char gen_part[MAX_NODE_NAME_LEN];
+        
+        if (root->date > 0) sprintf(snp_part, "%s.%d", root->name, root->date);
+        else strcpy(snp_part, root->name);
+        
+        if (root->gen_date > 0) sprintf(gen_part, "%s.%d", root->gen_name, root->gen_date);
+        else strcpy(gen_part, root->gen_name);
+        
+        sprintf(display_name, "%s %s", snp_part, gen_part);
     } else {
+        // Standard unmerged node formatting
         if (root->date > 0) {
             sprintf(display_name, "%s.%d", root->name, root->date);
         } else {

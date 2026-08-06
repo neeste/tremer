@@ -77,6 +77,12 @@
         const inputFilePath = inputFileName; 
 
         try {
+            // Determine the correct FS object (Emscripten exports it differently based on version/flags)
+            const fsObj = (typeof FS !== 'undefined') ? FS : (Module.FS ? Module.FS : null);
+            if (!fsObj) {
+                throw new Error("Filesystem module (FS) is not loaded or not exported by WebAssembly.");
+            }
+
             // Fetch the file silently from the local server folder
             const response = await fetch(inputFilePath);
             if (!response.ok) {
@@ -85,7 +91,7 @@
             const fileData = await response.arrayBuffer();
 
             // Write the fetched file into Emscripten's virtual file system
-            FS.writeFile(inputFileName, new Uint8Array(fileData));
+            fsObj.writeFile(inputFileName, new Uint8Array(fileData));
 
             // Set up command line arguments for TREMER: "-n KitID filename.txt"
             let args = ["-n", kitId, inputFileName];
@@ -97,7 +103,7 @@
             const targetOutputFile = `Neely_b${groupNum}.html`;
 
             // Read the generated file out of the virtual file system
-            const generatedData = FS.readFile(targetOutputFile);
+            const generatedData = fsObj.readFile(targetOutputFile);
             
             // Convert to a File object to preserve the filename for "Save As"
             const file = new File([generatedData], targetOutputFile, { type: "text/html" });

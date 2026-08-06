@@ -11,9 +11,6 @@ int calculate_str_distance(int strA[], int strB[], int total_markers);
 void branch_by_shared_mutations(TreeNode* node, int total_markers);
 void cluster_inferred_str_nodes(TreeNode* node, int total_markers);
 
-int global_allele_counts[MAX_MARKERS][256] = {0};
-int allele_counts_initialized = 0;
-
 /* --- 1. Utility and Search Functions --- */
 
 SnpTreeNode* find_snp_by_name(const char* name) {
@@ -260,17 +257,6 @@ int is_acceptable_target(int kit_idx, TreeNode* target_node) {
     
     // 2. Paper-Trail Lock: A kit MUST sit on its explicit GEN node or a descendant of it
     if (explicit_gen_node && !is_tree_node_ancestor(explicit_gen_node, target_node)) return 0;
-    
-    // 3. Strict Genealogical Boundary: A kit cannot cross into a deeper explicit GEN node's territory.
-    if (explicit_gen_node && explicit_gen_node != target_node) {
-        TreeNode* curr = target_node;
-        while (curr != NULL && curr != explicit_gen_node) {
-            if (curr->type == NODE_GEN || curr->type == NODE_SNP) {
-                return 0;
-            }
-            curr = curr->parent;
-        }
-    }
     
     // 3. Evaluate SNP constraints
     SnpNode* sn = kits[kit_idx].snps;
@@ -579,20 +565,6 @@ void build_skeleton_and_bucket_kits() {
 /* --- 5. Modals and STR Handling --- */
 
 void compute_missing_global_modals(int total_markers) {
-    if (!allele_counts_initialized) {
-        memset(global_allele_counts, 0, sizeof(global_allele_counts));
-        for (int m = 0; m < total_markers; m++) {
-            for (int i = 0; i < kit_count; i++) {
-                if (kits[i].id[0] == '\0') continue;
-                int val = kits[i].str_values[m];
-                if (val > 0 && val < 256) {
-                    global_allele_counts[m][val]++;
-                }
-            }
-        }
-        allele_counts_initialized = 1;
-    }
-
     for (int m = 0; m < total_markers; m++) {
         if (modal_values[m] <= 0) {
             int freqs[256] = {0}, max_freq = 0, best_val = STR_MISSING;
@@ -650,8 +622,9 @@ void refine_modals_bottom_up(TreeNode* node, int marker_count) {
 
 void group_shared_str_mutations(TreeNode* node, int total_markers) {
     if (node == NULL) return;
+    
     // THE SHIELD: Prevent STR branches from forming inside established genealogical or biological nodes
-    // Now implemented as a "partial" shield: we allow the parent to cluster, but we individually shield "known sons".
+    if (node->type == NODE_SNP || node->type == NODE_GEN || node->type == NODE_MERGED) return;
 
     int grouped = 1;
     while (grouped) {
@@ -659,64 +632,27 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
         if (child_node_count < 2) break; 
         int best_m = -1, best_val = -1, max_shared = 1;
         for (int m = 0; m < total_markers; m++) {
-            int p_val = node->local_modal[m]; 
-            if (p_val <= 0) continue;
+            int p_val = node->local_modal[m]; if (p_val <= 0) continue;
             int freqs[256] = {0}, child_node_matches[256] = {0}; 
-            c = node->first_child; while (c) { 
-                int cv = c->local_modal[m]; 
-                int is_shielded = 0;
-                if ((node->type == NODE_GEN || node->type == NODE_SNP) && (c->type == NODE_GEN || c->type == NODE_SNP)) {
-                    is_shielded = 1; // Default to shielded if both are established genealogical nodes
-                    if (c->date > 0 && node->date > 0 && (c->date - node->date) > 60) {
-                        is_shielded = 0; // If gap > 60 years, they are distant descendants, so intermediate nodes DO make sense.
-                    }
-                }
-                if (!is_shielded) {
-                    if (cv > 0 && cv != p_val && cv < 256) { freqs[cv]++; child_node_matches[cv]++; } 
-                }
-                c = c->next_sibling; 
-            }
-            for (int i = 0; i < node->kit_count; i++) { 
-                if (node->type != NODE_GEN && node->type != NODE_SNP) {
-                    int kv = kits[node->kit_indices[i]].str_values[m]; if (kv > 0 && kv != p_val && kv < 256) freqs[kv]++; 
-                }
-            }
-            for (int v = 0; v < 256; v++) {
-                if (child_node_matches[v] >= 2 && freqs[v] > max_shared) { best_m = m; best_val = v; max_shared = freqs[v]; }
-            }
+            c = node->first_child; while (c) { int cv = c->local_modal[m]; if (cv > 0 && cv != p_val && cv < 256) { freqs[cv]++; child_node_matches[cv]++; } c = c->next_sibling; }
+            for (int i = 0; i < node->kit_count; i++) { int kv = kits[node->kit_indices[i]].str_values[m]; if (kv > 0 && kv != p_val && kv < 256) freqs[kv]++; }
+            for (int v = 0; v < 256; v++) if (child_node_matches[v] >= 2 && freqs[v] > max_shared) { best_m = m; best_val = v; max_shared = freqs[v]; }
         }
         if (best_m != -1) {
             TreeNode* strn = &tree_nodes[tree_node_count++]; strn->type = NODE_STR_BRANCH; sprintf(strn->name, "STR%02d", str_node_counter++);
             strn->parent = node; for (int i = 0; i < MAX_MARKERS; i++) strn->local_modal[i] = node->local_modal[i]; strn->local_modal[best_m] = best_val;
-            strn->mutations[0].marker_index = best_m;
-            strn->mutations[0].old_val = node->local_modal[best_m];
-            strn->mutations[0].new_val = best_val;
-            strn->mutation_count = 1;
             TreeNode* prev = NULL; c = node->first_child;
-            int g_cnt = 0;
             while (c != NULL) { 
                 TreeNode* nxt = c->next_sibling; 
-                int is_shielded = 0;
-                if ((node->type == NODE_GEN || node->type == NODE_SNP) && (c->type == NODE_GEN || c->type == NODE_SNP)) {
-                    is_shielded = 1;
-                    if (c->date > 0 && node->date > 0 && (c->date - node->date) > 60) {
-                        is_shielded = 0;
-                    }
-                }
-                if (!is_shielded && c->local_modal[best_m] == best_val) { if (prev == NULL) node->first_child = nxt; else prev->next_sibling = nxt; c->next_sibling = NULL; add_child_to_node(strn, c); g_cnt++; } else prev = c;
+                if (c->local_modal[best_m] == best_val) { if (prev == NULL) node->first_child = nxt; else prev->next_sibling = nxt; c->next_sibling = NULL; add_child_to_node(strn, c); } else prev = c;
                 c = nxt; 
             }
-            if (strcmp(node->name, "WilliamNeely.1591") == 0) {
-                printf("DEBUG: WilliamNeely grouped %d children into %s for marker %s\n", g_cnt, strn->name, marker_names[best_m]);
+            int k_k[MAX_KITS], k_c = 0;
+            for (int i = 0; i < node->kit_count; i++) { 
+                int k_i = node->kit_indices[i]; if (kits[k_i].str_values[best_m] == best_val) { if (strn->kit_count < MAX_KITS) strn->kit_indices[strn->kit_count++] = k_i; } 
+                else { if (k_c < MAX_KITS) k_k[k_c++] = k_i; } 
             }
-            if (node->type != NODE_GEN && node->type != NODE_SNP) {
-                int k_k[MAX_KITS], k_c = 0;
-                for (int i = 0; i < node->kit_count; i++) { 
-                    int k_i = node->kit_indices[i]; if (kits[k_i].str_values[best_m] == best_val) { if (strn->kit_count < MAX_KITS) strn->kit_indices[strn->kit_count++] = k_i; } 
-                    else { if (k_c < MAX_KITS) k_k[k_c++] = k_i; } 
-                }
-                node->kit_count = k_c; for (int i = 0; i < k_c; i++) node->kit_indices[i] = k_k[i];
-            }
+            node->kit_count = k_c; for (int i = 0; i < k_c; i++) node->kit_indices[i] = k_k[i];
             add_child_to_node(node, strn); estimate_node_modal(strn, total_markers); grouped = 1;
         }
     }
@@ -725,8 +661,9 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
 
 void apply_rule_of_two(TreeNode* node, int total_markers) {
     if (node == NULL) return;
+    
     // THE SHIELD: Prevent STR branches from forming inside established genealogical or biological nodes
-    // Shield is only applied to known sons, not kits.
+    if (node->type == NODE_SNP || node->type == NODE_GEN || node->type == NODE_MERGED) return;
 
     if (node->kit_count >= 2) {
         int best_m = -1, best_v = -1, max_s = 1;
@@ -802,7 +739,7 @@ void reevaluate_mutation_labels(TreeNode* node, int total_markers) {
             int pv = node->parent->local_modal[m], cv = node->local_modal[m];
             if (pv > 0 && cv > 0 && pv != cv) {
                 int occ = 0; for (int k = 0; k < sub_c; k++) if (kits[sub_kits[k]].str_values[m] == cv) occ++;
-                if (occ >= 2) {
+                if (occ > 0 && (node->type == NODE_STR || node->type == NODE_STR_BRANCH || occ >= 2)) {
                     if (node->mutation_count < 20) { node->mutations[node->mutation_count].marker_index = m; node->mutations[node->mutation_count].old_val = pv; node->mutations[node->mutation_count].new_val = cv; node->mutation_count++; }
                 }
             }
@@ -849,8 +786,12 @@ void evaluate_reassignment_targets_recursive(TreeNode* target, int kit_idx, int 
     if (!target) return;
     if (target->type != NODE_DISTANCE && target != current_node) {
         if (is_acceptable_target(kit_idx, target)) {
-            int dist = calculate_str_distance(kits[kit_idx].str_values, target->local_modal, total_markers);
-            if (dist < *min_dist || (relaxed_mode && dist == *min_dist && *best_node && is_tree_node_ancestor(*best_node, target))) { *min_dist = dist; *best_node = target; }
+            int dist = 0;
+            for (int m = 0; m < total_markers; m++) {
+                int kv = kits[kit_idx].str_values[m], nv = target->local_modal[m];
+                if (kv > 0 && nv > 0 && kv != nv) dist++;
+            }
+            if (dist < *min_dist) { *min_dist = dist; *best_node = target; }
         }
     }
     TreeNode* c = target->first_child; while (c) { evaluate_reassignment_targets_recursive(c, kit_idx, total_markers, current_node, best_node, min_dist); c = c->next_sibling; }
@@ -860,8 +801,13 @@ void find_closest_node_recursive(TreeNode* node, int kit_idx, int total_markers,
     if (node == NULL) return;
     if (node != root_node && (node->type == NODE_SNP || node->type == NODE_GEN || node->type == NODE_MERGED || node->type == NODE_STR_BRANCH)) {
         if (is_acceptable_target(kit_idx, node)) { 
-            int dist = calculate_str_distance(kits[kit_idx].str_values, node->local_modal, total_markers);
-            if (dist < *min_dist || (relaxed_mode && dist == *min_dist && *best_node && is_tree_node_ancestor(*best_node, node))) { *min_dist = dist; *best_node = node; }
+            int dist = 0;
+            for (int m = 0; m < total_markers; m++) {
+                int k_val = kits[kit_idx].str_values[m];
+                int n_val = node->local_modal[m];
+                if (k_val > 0 && n_val > 0 && k_val != n_val) dist++;
+            }
+            if (dist < *min_dist) { *min_dist = dist; *best_node = node; }
         }
     }
     TreeNode* c = node->first_child;
@@ -948,29 +894,6 @@ void collapse_empty_str_nodes(TreeNode* node) {
     while (curr) {
         TreeNode* next = curr->next_sibling; collapse_empty_str_nodes(curr); 
         if ((curr->type == NODE_STR || curr->type == NODE_STR_BRANCH) && curr->kit_count == 0 && curr->mutation_count == 0) {
-            TreeNode* c_child = curr->first_child;
-            if (c_child) {
-                TreeNode* child_iter = c_child; while (child_iter->next_sibling) { child_iter->parent = node; child_iter = child_iter->next_sibling; }
-                child_iter->parent = node; if (prev == NULL) node->first_child = c_child; else prev->next_sibling = c_child;
-                child_iter->next_sibling = next; prev = child_iter;
-            } else { if (prev == NULL) node->first_child = next; else prev->next_sibling = next; }
-            curr = next; continue;
-        }
-        prev = curr; curr = next;
-    }
-}
-
-void prune_empty_str_nodes_with_kits(TreeNode* node) {
-    if (!node) return; TreeNode* prev = NULL; TreeNode* curr = node->first_child;
-    while (curr) {
-        TreeNode* next = curr->next_sibling; prune_empty_str_nodes_with_kits(curr); 
-        if ((curr->type == NODE_STR || curr->type == NODE_STR_BRANCH) && curr->mutation_count == 0) {
-            for(int i = 0; i < curr->kit_count; i++) {
-                if(node->kit_count < MAX_KITS) node->kit_indices[node->kit_count++] = curr->kit_indices[i];
-            }
-            for(int i = 0; i < curr->defined_kit_count; i++) {
-                if(node->defined_kit_count < MAX_KITS) node->defined_kits[node->defined_kit_count++] = curr->defined_kits[i];
-            }
             TreeNode* c_child = curr->first_child;
             if (c_child) {
                 TreeNode* child_iter = c_child; while (child_iter->next_sibling) { child_iter->parent = node; child_iter = child_iter->next_sibling; }
@@ -1253,8 +1176,7 @@ void apply_predictive_clustering_recursive(TreeNode* node, int total_markers) {
     if (!node) return;
 
     // 1. Process this specific node ONLY if it meets the threshold
-    int min_kits = relaxed_mode ? 2 : MIN_KITS_CLUSTER_NODE;
-    if (node->kit_count >= min_kits) {
+    if (node->kit_count >= MIN_KITS_CLUSTER_NODE) {
         branch_by_shared_mutations(node, total_markers);
         //cluster_inferred_str_nodes(node, total_markers);
     }
@@ -1283,7 +1205,8 @@ void check_kits_and_reassign(int total_markers) {
             TreeNode* current_node = NULL; int current_idx = -1; find_kit_in_active_tree(root_node, k, &current_node, &current_idx);
             if (!current_node) continue;
             int is_curr_ok = is_acceptable_target(k, current_node);
-            int current_dist = calculate_str_distance(kits[k].str_values, current_node->local_modal, total_markers);
+            int current_dist = 0;
+            for (int m = 0; m < total_markers; m++) { int kv = kits[k].str_values[m], nv = current_node->local_modal[m]; if (kv > 0 && nv > 0 && kv != nv) current_dist++; }
             int min_dist = is_curr_ok ? current_dist : 999999; TreeNode* best_node = is_curr_ok ? current_node : NULL;
             evaluate_reassignment_targets_recursive(root_node, k, total_markers, current_node, &best_node, &min_dist);
             if (best_node && best_node != current_node) {
@@ -1317,13 +1240,6 @@ void check_kits_and_reassign(int total_markers) {
     compute_missing_global_modals(total_markers);
     initialize_modals_top_down(root_node, modal_values, total_markers);
     refine_modals_bottom_up(root_node, total_markers);
-    
-    // One final grouping pass now that modals are perfectly stable!
-    group_shared_str_mutations(root_node, total_markers);
-    apply_rule_of_two(root_node, total_markers);
-    initialize_modals_top_down(root_node, modal_values, total_markers);
-    refine_modals_bottom_up(root_node, total_markers);
-    
     reevaluate_mutation_labels(root_node, total_markers);
     
     // 6. Final reports
@@ -1331,78 +1247,11 @@ void check_kits_and_reassign(int total_markers) {
     report_tree_topology_conflicts();
 }
 
-int get_marker_weight(const char* name) {
-    if (strstr(name, "CDY") || strstr(name, "464") || strstr(name, "456") || strstr(name, "570") || 
-        strstr(name, "576") || strstr(name, "449") || strstr(name, "413") || strstr(name, "511")) {
-        return 20; // Fast
-    }
-    if (strstr(name, "385") || strstr(name, "390") || strstr(name, "439") || strstr(name, "389") || 
-        strstr(name, "458") || strstr(name, "447") || strstr(name, "448") || strstr(name, "YCAII") || 
-        strstr(name, "459") || strstr(name, "GATAH4") || strstr(name, "GataH4")) {
-        return 50; // Medium
-    }
-    return 100; // Slow / Default
-}
-
 int calculate_str_distance(int strA[], int strB[], int total_markers) {
     int distance = 0;
-    int processed[MAX_MARKERS] = {0};
-
     for (int i = 0; i < total_markers; i++) {
-        if (processed[i]) continue;
-        
-        char* name = marker_names[i];
-        int weight = get_marker_weight(name);
-        int len = strlen(name);
-        
-        // Check if it's a multi-copy marker (ends in a, b, c, d, e, f)
-        int is_multi = 0;
-        char base_name[128];
-        if (len > 1 && name[len-1] >= 'a' && name[len-1] <= 'f') {
-            is_multi = 1;
-            strcpy(base_name, name);
-            base_name[len-1] = '\0';
-        }
-
-        if (is_multi) {
-            int group_indices[10];
-            int group_count = 0;
-            
-            for (int j = i; j < total_markers; j++) {
-                char* j_name = marker_names[j];
-                int j_len = strlen(j_name);
-                if (j_len > 1 && strncmp(j_name, base_name, j_len-1) == 0 && (j_name[j_len-1] >= 'a' && j_name[j_len-1] <= 'f')) {
-                    group_indices[group_count++] = j;
-                    processed[j] = 1;
-                }
-            }
-            
-            int differs = 0;
-            for (int k = 0; k < group_count; k++) {
-                int idx = group_indices[k];
-                if (strA[idx] != STR_MISSING && strB[idx] != STR_MISSING && strA[idx] > 0 && strB[idx] > 0) {
-                    if (!relaxed_mode) {
-                        if (global_allele_counts[idx][strA[idx]] <= 1 || global_allele_counts[idx][strB[idx]] <= 1) {
-                            continue;
-                        }
-                    }
-                    if (strA[idx] != strB[idx]) {
-                        differs = 1;
-                        break;
-                    }
-                }
-            }
-            if (differs) distance += weight;
-        } else {
-            processed[i] = 1;
-            if (strA[i] != STR_MISSING && strB[i] != STR_MISSING && strA[i] > 0 && strB[i] > 0) {
-                if (!relaxed_mode) {
-                    if (global_allele_counts[i][strA[i]] <= 1 || global_allele_counts[i][strB[i]] <= 1) {
-                        continue;
-                    }
-                }
-                distance += abs(strA[i] - strB[i]) * weight;
-            }
+        if (strA[i] != STR_MISSING && strB[i] != STR_MISSING && strA[i] > 0 && strB[i] > 0) {
+            distance += abs(strA[i] - strB[i]);
         }
     }
     return distance;
@@ -1508,19 +1357,13 @@ void cluster_inferred_str_nodes(TreeNode* node, int total_markers) {
     }
 }
 
-#define DEFAULT_BIRTH_YEAR 1950
-
 // Helper to get minimum birth year from direct kits
 int get_min_kit_birth_year(TreeNode* node) {
     int min_y = 999999;
     for (int i = 0; i < node->kit_count; i++) {
         int k_idx = node->kit_indices[i];
-        
-        // NEW: If the kit has no birth year (0), default to 1950
-        int effective_year = (kits[k_idx].birth_year > 0) ? kits[k_idx].birth_year : DEFAULT_BIRTH_YEAR;
-        
-        if (effective_year < min_y) {
-            min_y = effective_year;
+        if (kits[k_idx].birth_year > 0 && kits[k_idx].birth_year < min_y) {
+            min_y = kits[k_idx].birth_year;
         }
     }
     return min_y;

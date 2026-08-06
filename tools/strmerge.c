@@ -84,15 +84,21 @@ int csv_read(char *fn, char **kitnam, int **kitstr, int *max_idx_out) {
         if (strstr(norm_tok, "kit") || strstr(norm_tok, "name") || strstr(norm_tok, "haplogroup") || strstr(norm_tok, "snp")) {
             col_mapping[col_idx] = -1;
         } else {
-            // Find base index. If multi-copy, match the 'a' variant or the base name
             int mapped = -1;
-            char search_a[256];
-            sprintf(search_a, "%sa", norm_tok);
-            
             for (int k = 0; k < n_lab; k++) {
-                if (strcmp(norm_tok, norm_fallback[k]) == 0 || strcmp(search_a, norm_fallback[k]) == 0) {
+                if (strcasecmp(tok, str_lab[k]) == 0) {
                     mapped = k;
                     break;
+                }
+            }
+            if (mapped == -1) {
+                char search_a[256];
+                sprintf(search_a, "%sa", norm_tok);
+                for (int k = 0; k < n_lab; k++) {
+                    if (strcmp(norm_tok, norm_fallback[k]) == 0 || strcmp(search_a, norm_fallback[k]) == 0) {
+                        mapped = k;
+                        break;
+                    }
                 }
             }
             // For edge cases like "y-gata-h4" -> "gatah4"

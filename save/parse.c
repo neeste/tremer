@@ -99,18 +99,14 @@ void clean_snp_name(char* snp_name) {
 }
 
 void parse_markers(FILE* file) {
-    char line[16384]; 
+    char line[4096]; 
     int m_idx = 0;
     
     while (peek_next_char(file) != '/' && peek_next_char(file) != EOF) {
         if (get_line_rest(file, line, sizeof(line))) {
-            // Convert all commas and tabs to spaces to normalize delimiters
-            for (int i = 0; line[i] != '\0'; i++) {
-                if (line[i] == ',' || line[i] == '\t') {
-                    line[i] = ' ';
-                }
-            }
             char delim = ' ';
+            if (strchr(line, ',')) delim = ',';
+            else if (strchr(line, '\t')) delim = '\t';
             
             char* ptr = line; char* token;
             
@@ -166,18 +162,14 @@ void parse_markers(FILE* file) {
 }
 
 void parse_modal(FILE* file) {
-    char line[16384]; 
+    char line[4096]; 
     int m_idx = 0;
     
     while (peek_next_char(file) != '/' && peek_next_char(file) != EOF) {
         if (get_line_rest(file, line, sizeof(line))) {
-            // Convert all commas and tabs to spaces to normalize delimiters
-            for (int i = 0; line[i] != '\0'; i++) {
-                if (line[i] == ',' || line[i] == '\t') {
-                    line[i] = ' ';
-                }
-            }
             char delim = ' ';
+            if (strchr(line, ',')) delim = ',';
+            else if (strchr(line, '\t')) delim = '\t';
             
             char* ptr = line; char* token;
             
@@ -239,7 +231,7 @@ void parse_modal(FILE* file) {
 }
 
 void parse_snptree(FILE* file) {
-    char line[16384]; 
+    char line[1024]; 
     while (peek_next_char(file) != '/' && peek_next_char(file) != EOF) {
         if (get_line_rest(file, line, sizeof(line))) {
             char tokens[50][MAX_STRING_LEN];
@@ -388,7 +380,7 @@ void parse_gendata(FILE* file) {
 }
 
 void parse_strdata(FILE* file) {
-    char line[16384];
+    char line[2048];
     while (peek_next_char(file) != '/' && peek_next_char(file) != EOF) {
         if (get_line_rest(file, line, sizeof(line))) {
             
@@ -398,15 +390,9 @@ void parse_strdata(FILE* file) {
                 continue; 
             }
             
-            // Convert all commas, tabs, parentheses, and non-breaking spaces to normalize delimiters
-            for (int i = 0; line[i] != '\0'; i++) {
-                if (line[i] == ',' || line[i] == '\t' || line[i] == '(' || line[i] == ')' || 
-                   (unsigned char)line[i] == 0xA0 || (unsigned char)line[i] == 0xC2) {
-                    line[i] = ' ';
-                }
-            }
-            
             char delim = ' ';
+            if (strchr(line, ',')) delim = ',';
+            else if (strchr(line, '\t')) delim = '\t';
             
             char* ptr = line; char* token;
             int current_kit_idx = -1; int m_idx = 0; int token_count = 0;
@@ -486,7 +472,7 @@ void parse_strdata(FILE* file) {
 }
 
 void parse_snpdata(FILE* file) {
-    char line[16384]; 
+    char line[4096]; 
     while (peek_next_char(file) != '/' && peek_next_char(file) != EOF) {
         if (get_line_rest(file, line, sizeof(line))) {
             char prefix[12]; strncpy(prefix, line, 11); prefix[11] = '\0';
@@ -495,15 +481,9 @@ void parse_snpdata(FILE* file) {
                 continue; 
             }
             
-            // Convert all commas, tabs, parentheses, and non-breaking spaces to normalize delimiters
-            for (int i = 0; line[i] != '\0'; i++) {
-                if (line[i] == ',' || line[i] == '\t' || line[i] == '(' || line[i] == ')' || 
-                   (unsigned char)line[i] == 0xA0 || (unsigned char)line[i] == 0xC2) {
-                    line[i] = ' ';
-                }
-            }
-            
             char delim = ' ';
+            if (strchr(line, ',')) delim = ',';
+            else if (strchr(line, '\t')) delim = '\t';
             
             char* ptr = line; char* token;
             int current_kit_idx = -1; int token_count = 0;
@@ -672,7 +652,7 @@ void parse_groups(FILE* file) {
 // NEW: SAFE BLOCK IGNORER
 // ==========================================
 void parse_ignore(FILE* file) {
-    char line[16384];
+    char line[4096];
     // Consume and discard lines until the next block header (starting with '/') or End of File
     while (peek_next_char(file) != '/' && peek_next_char(file) != EOF) {
         get_line_rest(file, line, sizeof(line));

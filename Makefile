@@ -26,8 +26,9 @@ DEPLOY_PATH = public_html/tremer
 GROUPS := $(patsubst $(YSTR)/group_%,%,$(wildcard $(YSTR)/group_*))
 $(foreach grp,$(GROUPS),$(eval strdata_out/strdata$(grp).txt: $(wildcard $(YSTR)/group_$(grp)/*.csv)))
 
-build: strdata_out $(Neely_INPUTS)
+build: strdata_out $(Neely_INPUTS) 
 	@echo "STR Build complete!"
+	make Neely
 
 strdata_out:
 	@mkdir -p strdata_out
@@ -54,7 +55,7 @@ update:
 	python3 tools/update_tremer_ages.py $(PROJ)/Neely_s*.txt
 
 em :
-	@echo source emsdk/emsdk_env.sh
+	@echo source ~/emsdk/emsdk_env.sh
 
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
@@ -72,7 +73,7 @@ wasm: $(SRC) run
 	  -s EXPORTED_FUNCTIONS=_main,_malloc,_free \
 	  -s EXPORTED_RUNTIME_METHODS=callMain,FS \
 	  -s FORCE_FILESYSTEM=1 \
-	  -s ALLOW_MEMORY_GROWTH=1 \
+	  -s ALLOW_MEMORY_GROWTH=0 \
 	  -s TOTAL_STACK=67108864 \
 	  -s INITIAL_MEMORY=268435456 \
 	  -s INVOKE_RUN=0
@@ -111,7 +112,8 @@ relaxed: $(TARGET)
 
 # Clean up the compiled executable and the generated output files
 clean:
-	rm -rf $(TARGET) strmerge strdata tree*.txt *_*.{svg,png,html} tremer.{js,wasm} strdata_out *.json
+	rm -rf $(TARGET) strmerge strdata tree*.txt *_*.{svg,png,html} 
+	rm -rf tremer.{js,wasm} strdata_out *.json 
 
 # Deploy to Site5 web host via FTP
 deploy:

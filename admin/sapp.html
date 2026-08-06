@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAPP Integration Tools</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-gradient: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --text-dark: #1e1b4b;
+            --text-light: #4338ca;
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            background: var(--bg-gradient);
+            color: var(--text-dark);
+            min-height: 100vh;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            margin-bottom: 30px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+        .back-link:hover {
+            transform: translateX(-4px);
+            color: var(--primary-hover);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        h1 {
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin: 0 0 10px 0;
+            background: linear-gradient(135deg, #3730a3, #4f46e5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #6366f1;
+            margin: 0;
+            font-weight: 400;
+        }
+
+        .tools-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .tools-grid { grid-template-columns: 1fr; }
+        }
+
+        .tool-card {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, #4f46e5, #818cf8);
+        }
+
+        .tool-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.1);
+        }
+
+        .tool-card h2 {
+            font-size: 1.4rem;
+            margin: 0 0 15px 0;
+            color: var(--text-dark);
+        }
+
+        .tool-card p {
+            color: #6b7280;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0 0 25px 0;
+            flex-grow: 1;
+        }
+
+        .upload-area {
+            border: 2px dashed #c7d2fe;
+            border-radius: 12px;
+            padding: 30px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: var(--primary);
+            background: #eef2ff;
+        }
+
+        .upload-area input[type="file"] {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .upload-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .upload-text {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 0.9rem;
+        }
+        
+        .upload-subtext {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .success-msg {
+            display: none;
+            margin-top: 15px;
+            padding: 10px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">
+        <svg style="width:16px;height:16px;margin-right:5px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Back to TREMER
+    </a>
+    
+    <div class="header">
+        <h1>SAPP Integration Tools</h1>
+        <p class="subtitle">Convert data files seamlessly between TREMER and SAPP.</p>
+    </div>
+
+    <div class="tools-grid">
+        <!-- Import Tool -->
+        <div class="tool-card">
+            <h2>SAPP to TREMER</h2>
+            <p>Converts a SAPP text file by wrapping the kits into a <code>SAPP_Import</code> group, allowing TREMER to parse and build the tree natively.</p>
+            
+            <div class="upload-area" id="import-drop">
+                <input type="file" id="import-file" accept=".txt" onchange="handleImport(this.files[0])">
+                <span class="upload-icon">📥</span>
+                <span class="upload-text">Choose SAPP File</span>
+                <span class="upload-subtext">or drag and drop here</span>
+            </div>
+            <div id="import-success" class="success-msg">Conversion successful! Downloading...</div>
+        </div>
+
+        <!-- Export Tool -->
+        <div class="tool-card">
+            <h2>TREMER to SAPP</h2>
+            <p>Strips out TREMER-specific grouping headers and re-formats raw STR and SNP data into standard SAPP blocks for benchmarking.</p>
+            
+            <div class="upload-area" id="export-drop">
+                <input type="file" id="export-file" accept=".txt" onchange="handleExport(this.files[0])">
+                <span class="upload-icon">📤</span>
+                <span class="upload-text">Choose TREMER File</span>
+                <span class="upload-subtext">or drag and drop here</span>
+            </div>
+            <div id="export-success" class="success-msg">Conversion successful! Downloading...</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Utility to handle drag and drop styling
+    function setupDragAndDrop(elementId) {
+        const el = document.getElementById(elementId);
+        el.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            el.classList.add('dragover');
+        });
+        el.addEventListener('dragleave', () => {
+            el.classList.remove('dragover');
+        });
+        el.addEventListener('drop', () => {
+            el.classList.remove('dragover');
+        });
+    }
+
+    setupDragAndDrop('import-drop');
+    setupDragAndDrop('export-drop');
+
+    // Download helper
+    function downloadTextFile(filename, content) {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    // Show success message briefly
+    function showSuccess(elementId, msg) {
+        const el = document.getElementById(elementId);
+        el.textContent = msg;
+        el.style.display = 'block';
+        setTimeout(() => {
+            el.style.display = 'none';
+        }, 3000);
+    }
+
+    // SAPP -> TREMER logic (equivalent to sapp2tremer.py)
+    function handleImport(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const content = e.target.result;
+            
+            // Extract kit IDs from /STRDATA block using regex
+            const strdataMatch = content.match(/\/STRDATA\s+([\s\S]*?)(?=\n\/|$)/i);
+            const kits = [];
+            
+            if (strdataMatch && strdataMatch[1]) {
+                const lines = strdataMatch[1].trim().split('\n');
+                for (let line of lines) {
+                    line = line.trim();
+                    if (!line || line.startsWith('#')) continue;
+                    const parts = line.split(/\s+/);
+                    if (parts.length > 0) {
+                        kits.push(parts[0]);
+                    }
+                }
+            }
+            
+            if (kits.length === 0) {
+                alert("Error: No kits found in /STRDATA block.");
+                return;
+            }
+            
+            const outContent = `/GROUPS\nSAPP_Import (${kits.join(' ')})\n\n${content}`;
+            
+            downloadTextFile(`tremer_imported_${file.name}`, outContent);
+            showSuccess('import-success', `Success! Exported ${kits.length} kits.`);
+            document.getElementById('import-file').value = '';
+        };
+        reader.readAsText(file);
+    }
+
+    // TREMER -> SAPP logic (equivalent to tremer2sapp.py)
+    function handleExport(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const lines = e.target.result.split('\n');
+            const snpData = [];
+            const strData = [];
+            let inSnpData = false;
+            
+            for (let line of lines) {
+                const stripped = line.trim();
+                
+                if (stripped.toUpperCase().startsWith('/SNPDATA')) {
+                    inSnpData = true;
+                    continue;
+                } else if (stripped.startsWith('/') && inSnpData) {
+                    inSnpData = false;
+                }
+                
+                if (inSnpData && stripped && !stripped.startsWith('#')) {
+                    snpData.push(stripped);
+                    continue;
+                }
+                
+                // Parse TREMER kit data lines
+                const parts = stripped.split(/\s+/);
+                if (parts.length > 2) {
+                    const secondPart = parts[1];
+                    // Check if parts[1] is a number, 'N', or contains '-'
+                    if (!isNaN(secondPart) || secondPart === 'N' || secondPart.includes('-')) {
+                        strData.push(stripped);
+                    }
+                }
+            }
+            
+            let outContent = "/STRDATA\n";
+            for (let st of strData) {
+                outContent += st + "\n";
+            }
+            
+            if (snpData.length > 0) {
+                outContent += "\n/SNPDATA\n";
+                for (let snp of snpData) {
+                    outContent += snp + "\n";
+                }
+            }
+            
+            downloadTextFile(`sapp_exported_${file.name}`, outContent);
+            showSuccess('export-success', `Success! Exported ${strData.length} kits.`);
+            document.getElementById('export-file').value = '';
+        };
+        reader.readAsText(file);
+    }
+</script>
+</body>
+</html>

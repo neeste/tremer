@@ -51,11 +51,11 @@ main(int argc, char **argv)
             nfn[j] = 0;
             strcat(nfn, ".txt");
             printf("include %s\n", nfn);
-            nfp = fopen(nfn, "r");
+            char alt[MAXFNL];
+            snprintf(alt, MAXFNL, "strdata_out/%s", nfn);
+            nfp = fopen(alt, "r");
             if (nfp == NULL) {
-                char alt[MAXFNL];
-                snprintf(alt, MAXFNL, "strdata_out/%s", nfn);
-                nfp = fopen(alt, "r");
+                nfp = fopen(nfn, "r");
             }
             if (nfp == NULL) {
                 printf("WARNING: can't open %s\n",nfn);

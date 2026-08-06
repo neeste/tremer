@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TREMER Tree Logic</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; line-height: 1.6; }
+        .container { max-width: 800px; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); margin: auto; }
+        h1, h2, h3 { color: #333; }
+        .back-link { display: inline-block; margin-bottom: 20px; color: #0066cc; text-decoration: none; font-weight: bold; }
+        .back-link:hover { text-decoration: underline; }
+        code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; color: #d14; font-family: monospace; }
+        ul { margin-bottom: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="back-link">← Back to TREMER</a>
+    
+    <h1>TREMER Tree Logic Rationale</h1>
+
+    <p>TREMER constructs phylogenetic trees by combining hard biological truths (SNPs and genealogical paper trails) with probabilistic genetic markers (STRs). The core philosophy is <strong>"Strict Biological Skeletons,"</strong> ensuring that predictive STR clustering never overrides established biological facts.</p>
+
+    <p>The tree-building process is executed in multiple distinct phases within the core engine (<code>src/tree_logic.c</code>):</p>
+
+    <h2>1. Skeletal Construction & Kit Bucketing (<code>build_skeleton_and_bucket_kits</code>)</h2>
+    <p>Before evaluating any STR mutations, TREMER establishes an absolute biological framework.</p>
+    <ul>
+        <li><strong>SNP Nodes (<code>NODE_SNP</code>):</strong> Trees are first populated with known terminal SNPs and their established hierarchy.</li>
+        <li><strong>Genealogical Nodes (<code>NODE_GEN</code>):</strong> Paper-trail ancestors are inserted into the tree.</li>
+        <li><strong>Merging:</strong> If a SNP node and a genealogical node represent the exact same biological branch (i.e., they contain the exact same set of kits or one is a pure subset without conflict), they are merged into a single <code>NODE_MERGED</code> to simplify the tree structure.</li>
+        <li><strong>Bucketing:</strong> Each kit is evaluated against this skeleton. Using functions like <code>is_acceptable_target</code>, TREMER enforces absolute constraints: a kit <em>must</em> be placed in a branch that respects its positive SNPs, negative SNPs, and explicit genealogical assignments. It is fundamentally impossible for a kit to be pulled into an unrelated branch simply because its STRs look similar.</li>
+    </ul>
+
+    <h2>2. Modal Inference (<code>initialize_modals_top_down</code>, <code>refine_modals_bottom_up</code>)</h2>
+    <p>With the skeleton established and kits securely bucketed, TREMER calculates the expected ancestral STR profile (the "modal") for every node in the tree.</p>
+    <ul>
+        <li><strong>Top-Down Initialization:</strong> The overall project modal is pushed down the tree as a baseline.</li>
+        <li><strong>Bottom-Up Refinement:</strong> Starting from the leaves (the kits), the algorithm recalculates the modal for each parent node by determining the most frequent allele at each marker among its immediate descendants. This two-pass approach ensures that the ancestral signature at any given branching point is accurately inferred from the kits beneath it.</li>
+    </ul>
+
+    <h2>3. STR Branching ("The Shield" and Mutation Grouping)</h2>
+    <p>Once modals are established, TREMER looks for shared mutations within the bucketed groups to create inferred STR branches.</p>
+    
+    <h3><code>group_shared_str_mutations</code></h3>
+    <p>This function identifies specific STR markers where a mutation is shared by multiple descendants (nodes or kits) within a parent group.</p>
+    <ul>
+        <li><strong>The Shield:</strong> A critical piece of logic prevents STR clustering from forming branches that would disrupt known genealogical/biological relationships. For instance, if two known paper-trail sons share an STR mutation, they are not artificially clustered into a new intermediate STR node unless the temporal gap between the ancestor and the sons is large enough (>60 years) to biologically justify an intermediate ancestor.</li>
+        <li>When a valid shared mutation is found, a new <code>NODE_STR_BRANCH</code> is created, and the matching descendants are moved into it.</li>
+    </ul>
+
+    <h3><code>apply_rule_of_two</code></h3>
+    <p>After major shared mutations are grouped, the "Rule of Two" is applied. This creates terminal STR branches (<code>NODE_STR</code>) if at least two kits within a remaining pool share a unique mutation away from the local modal. It ensures that solitary mutations (unique to a single kit) do not unnecessarily spawn new ancestral nodes.</p>
+
+    <h2>4. Reassignment & Optimization (<code>check_kits_and_reassign</code>, <code>reassign_root_orphans</code>)</h2>
+    <p>Initial bucketing can sometimes leave kits artificially stranded high up in the tree (e.g., at the ROOT) if their SNP testing is incomplete.</p>
+    <p>TREMER runs a reassignment loop to evaluate if these "orphaned" kits are a better genetic fit deeper in the tree. It calculates the STR distance between the kit and various nodes. However, <strong>this reassignment is strictly bounded by the skeletal rules.</strong> A kit will only be moved deeper if the new location does not violate any of its known negative SNPs or explicit genealogical boundaries.</p>
+    <p><em>(Note: In "Relaxed Mode", some of these strict biological boundaries are softened to allow for SAPP-style heuristic clustering based purely on STR similarity).</em></p>
+
+    <h2>5. Parsimony Scrub (<code>post_process_parsimony_scrub</code>)</h2>
+    <p>Tree-building algorithms can sometimes produce redundant "pass-through" nodes—a node with only one child and no kits of its own.</p>
+    <p>To ensure the tree remains parsimonious (the simplest structure that explains the data), this function performs a bottom-up scrub. If an inferred STR node serves only to pass a single line of descent down to another node without grouping any actual kits, it is structurally bypassed and its mutations are collapsed up into the parent. This keeps the visual output clean and genetically accurate without meaningless intermediate steps.</p>
+
+    <h2>6. Age Estimation (<code>estimate_str_node_ages</code>)</h2>
+    <p>Finally, TREMER estimates the ages of the newly inferred STR nodes. While SNP and GEN nodes often have hard dates (from FTDNA Discover or paper trails), STR nodes are dated proportionally based on the number of accumulated mutations relative to their bounding parent and child nodes.</p>
+
+</div>
+
+</body>
+</html>

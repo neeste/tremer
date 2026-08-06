@@ -241,11 +241,19 @@
                     colMapping.push(-1);
                 } else {
                     let mapped = -1;
-                    const searchA = normTok + 'a';
                     for (let k = 0; k < str_lab.length; k++) {
-                        if (normTok === normFallback[k] || searchA === normFallback[k]) {
+                        if (header === str_lab[k].toLowerCase()) {
                             mapped = k;
                             break;
+                        }
+                    }
+                    if (mapped === -1) {
+                        const searchA = normTok + 'a';
+                        for (let k = 0; k < str_lab.length; k++) {
+                            if (normTok === normFallback[k] || searchA === normFallback[k]) {
+                                mapped = k;
+                                break;
+                            }
                         }
                     }
                     if (mapped === -1 && normTok.includes("gata-h4")) {
@@ -306,6 +314,7 @@
                 }
             }
 
+            outputText += "* Kit " + kitName + " has " + strValues.length + " STRs.\n";
             outputText += kitName + " " + strValues.join(' ') + "\n";
         }
 
