@@ -2,7 +2,7 @@
 
 #define SVG_X_SPAC 176
 #define SVG_MARGIN 50
-#define BOX_W 128
+#define BOX_W 146
 
 static float level_y_coords[5000] = {0};
 
@@ -240,15 +240,12 @@ void draw_svg_nodes(FILE* f, TreeNode* node) {
 
                 char mut_str[128];
                 sprintf(mut_str, "%s=%d-&gt;%d", marker_names[m_idx], node->mutations[i].old_val, node->mutations[i].new_val);
-                if (strlen(mut_str) >= 19) { // 19 because -&gt; is 4 chars longer than ->
-                    fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"start\">%s  %d</text>\n", 
-                            x + 5, mut_y, mut_str, occ);
-                } else {
-                    fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"start\">%s</text>\n", 
-                            x + 10, mut_y, mut_str);
-                    fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"end\">%d</text>\n", 
-                            x + BOX_W - 5, mut_y, occ);
-                }
+                
+                fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"start\">%s</text>\n", 
+                        x + 6, mut_y, mut_str); // Shifted start from +10 to +6 to give slightly more space
+                fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"end\">%d</text>\n", 
+                        x + BOX_W - 6, mut_y, occ); // Anchor count rigidly to the right for vertical alignment
+                
                 mut_y -= 12; 
             }
         }
