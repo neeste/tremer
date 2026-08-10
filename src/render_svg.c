@@ -238,10 +238,17 @@ void draw_svg_nodes(FILE* f, TreeNode* node) {
                     if (kits[sub_kits[k]].str_values[m_idx] == node->mutations[i].new_val) occ++;
                 }
 
-                fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"start\">%s=%d-&gt;%d</text>\n", 
-                        x + 10, mut_y, marker_names[m_idx], node->mutations[i].old_val, node->mutations[i].new_val);
-                fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"end\">%d</text>\n", 
-                        x + BOX_W - 10, mut_y, occ);
+                char mut_str[128];
+                sprintf(mut_str, "%s=%d-&gt;%d", marker_names[m_idx], node->mutations[i].old_val, node->mutations[i].new_val);
+                if (strlen(mut_str) >= 19) { // 19 because -&gt; is 4 chars longer than ->
+                    fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"start\">%s  %d</text>\n", 
+                            x + 5, mut_y, mut_str, occ);
+                } else {
+                    fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"start\">%s</text>\n", 
+                            x + 10, mut_y, mut_str);
+                    fprintf(f, "<text x=\"%.1f\" y=\"%d\" font-family=\"monospace\" font-size=\"10\" fill=\"#555\" text-anchor=\"end\">%d</text>\n", 
+                            x + BOX_W - 5, mut_y, occ);
+                }
                 mut_y -= 12; 
             }
         }
