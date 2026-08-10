@@ -1,4 +1,5 @@
 #include "tremer.h"
+#include <ctype.h>
 #include "fallback_labels.h" // Assuming you still have this
 #include <stdlib.h> 
 
@@ -303,6 +304,25 @@ int main(int argc, char* argv[]) {
         if (marker_names[m][0] == '\0') {
             if (m < n_lab && strlen(str_lab[m]) > 0) strcpy(marker_names[m], str_lab[m]);
             else sprintf(marker_names[m], "%d", m + 1);
+        }
+    }
+    // SAPP compatibility: Adjust DYS389II by subtracting DYS389I
+    int d389i_idx = -1, d389ii_idx = -1;
+    for (int m = 0; m < marker_count; m++) {
+        char upper_name[MAX_STRING_LEN];
+        strcpy(upper_name, marker_names[m]);
+        for (int i = 0; upper_name[i]; i++) upper_name[i] = toupper((unsigned char)upper_name[i]);
+        if (strstr(upper_name, "389I") != NULL && strstr(upper_name, "389II") == NULL) d389i_idx = m;
+        if (strstr(upper_name, "389II") != NULL) d389ii_idx = m;
+    }
+    if (d389i_idx != -1 && d389ii_idx != -1) {
+        printf("Adjusting %s by subtracting %s for compatibility...\n", marker_names[d389ii_idx], marker_names[d389i_idx]);
+        for (int k = 0; k < kit_count; k++) {
+            if (kits[k].str_values[d389i_idx] > 0 && kits[k].str_values[d389ii_idx] > 0) {
+                if (kits[k].str_values[d389ii_idx] > kits[k].str_values[d389i_idx]) {
+                    kits[k].str_values[d389ii_idx] -= kits[k].str_values[d389i_idx];
+                }
+            }
         }
     }
     
