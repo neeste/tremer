@@ -62,37 +62,7 @@ SnpTreeNode* get_gen_group_mrca_snp(int gen_idx) {
 }
 
 SnpTreeNode* find_imputed_terminal_snp(Kit* kit, int kit_idx) {
-    SnpTreeNode* terminal = find_raw_terminal_snp(kit);
-    if (terminal != NULL) return terminal;
-    int best_gen_idx = -1; int min_size = 999999;
-    for (int g = 0; g < gen_hierarchy_count; g++) {
-        int in_gen = 0; char status = ' ';
-        for (int k = 0; k < gen_hierarchy[g].kit_count; k++) {
-            if (gen_hierarchy[g].kit_indices[k] == kit_idx) { in_gen = 1; status = gen_hierarchy[g].kit_statuses[k]; break; }
-        }
-        if (in_gen && (status == '+' || status == ' ') && gen_hierarchy[g].kit_count < min_size) {
-            SnpTreeNode* mrca = get_gen_group_mrca_snp(g);
-            if (mrca != NULL) { min_size = gen_hierarchy[g].kit_count; best_gen_idx = g; }
-        }
-    }
-    if (best_gen_idx != -1) {
-        SnpTreeNode* mrca = get_gen_group_mrca_snp(best_gen_idx);
-        while (mrca != NULL) {
-            int conflict = 0; SnpTreeNode* check_node = mrca;
-            while (check_node) {
-                SnpNode* sn = kit->snps;
-                while (sn) {
-                    if (strcmp(sn->name, check_node->name) == 0 && sn->status == SNP_NEGATIVE) { conflict = 1; break; }
-                    sn = sn->next;
-                }
-                if (conflict) break;
-                check_node = check_node->parent;
-            }
-            if (!conflict) return mrca; 
-            mrca = mrca->parent; 
-        }
-    }
-    return NULL;
+    return find_raw_terminal_snp(kit);
 }
 
 void impute_snp_statuses() {
