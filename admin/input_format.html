@@ -73,10 +73,17 @@ B201693.1950  991341.1951 999290.1950 324852.1956 911337.1950
 B1255475.1950 137035.1917</pre>
 
     <h3><code>/SNPDATA</code></h3>
-    <p>Lists the positive (<code>+</code>), negative (<code>-</code>), or untested (<code>?</code>) SNP results for specific kits. The format requires the Kit ID, followed by the specific SNP test results in parentheses.</p>
+    <p>Lists the positive (<code>+</code>), negative (<code>-</code>), or explicitly untested (<code>?</code>) SNP results for specific kits. The format requires the Kit ID, followed by the specific SNP test results in parentheses.</p>
     <pre>/SNPDATA
 123456 (R-M269+ R-L21+ R-DF13-)
 234567 (R-M269+ R-L21?)</pre>
+    
+    <div style="background-color: #f8f9fa; border-left: 4px solid #007bff; padding: 10px; margin: 15px 0;">
+        <strong>Important Note on Imputation & Sub-branching:</strong><br>
+        By default, if you assign kits to a <code>/GENDATA</code> group, TREMER assumes the members of that group share a founding ancestor. If <em>any</em> kits in that group have taken advanced SNP tests (e.g., Big Y) and tested positive for a terminal SNP, TREMER will automatically <strong>impute that positive SNP to all untested members</strong> of the group. This is the intended behavior to keep groups cohesive on the SNP tree.
+        <br><br>
+        However, if you know a specific SNP is a <em>downstream sub-branch</em> formed by a descendant (not the founding ancestor of the whole group), this auto-imputation will incorrectly pull untested cousins down into that sub-branch. To prevent this, you must explicitly mark the untested cousins with a <code>?</code> (e.g., <code>R-FTJ76232?</code>). This tells TREMER: <em>"This kit belongs to the family, but explicitly prohibit it from being pulled into this downstream SNP branch."</em>
+    </div>
 
     <h3><code>/GROUPS</code></h3>
     <p>Assigns a descriptive group label to a kit. This label will be printed below the kit ID in the final SVG tree output.</p>
