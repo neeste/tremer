@@ -150,6 +150,22 @@ void initialize_memory() {
 }
 
 void cleanup_memory() {
+    if (kits) {
+        for (int i = 0; i < MAX_KITS; i++) {
+            SnpNode* curr = kits[i].snps;
+            while (curr != NULL) {
+                SnpNode* next = curr->next;
+                free(curr);
+                curr = next;
+            }
+        }
+        free(kits);
+        kits = NULL;
+    }
+    if (tree_nodes) { free(tree_nodes); tree_nodes = NULL; }
+    if (gen_hierarchy) { free(gen_hierarchy); gen_hierarchy = NULL; }
+    if (marker_names) { free(marker_names); marker_names = NULL; }
+    if (snp_hierarchy) { free(snp_hierarchy); snp_hierarchy = NULL; }
 }
 
 int main(int argc, char* argv[]) {
@@ -209,23 +225,11 @@ int main(int argc, char* argv[]) {
         printf("  -n    node_or_kit_name\n");
         printf("  -g    group_name\n");
         printf("  -p    project_name\n");
-        return 1;
-    }
-
-    // Secondary memory initialization (legacy safety block)
-    kits = calloc(MAX_KITS, sizeof(Kit)); 
-    tree_nodes = calloc(MAX_TREE_NODES, sizeof(TreeNode)); 
-    gen_hierarchy = calloc(MAX_GEN_GROUPS, sizeof(GenGroup)); 
-    marker_names = calloc(MAX_MARKERS, sizeof(*marker_names)); 
-    snp_hierarchy = calloc(MAX_SNPS, sizeof(SnpTreeNode));
-    
-    if (!kits || !tree_nodes || !gen_hierarchy || !marker_names || !snp_hierarchy) {
-        printf("Memory allocation failed. Please verify system RAM availability.\n");
-        return 1;
+        cleanup_memory(); return 1;
     }
 
     FILE* file = fopen(argv[input_file_idx], "r"); 
-    if (!file) return 1;
+    if (!file) { cleanup_memory(); return 1; }
 
     for (int i = 0; i < MAX_MARKERS; i++) modal_values[i] = STR_MISSING;
 
@@ -416,12 +420,6 @@ int main(int argc, char* argv[]) {
         // printf("Full tree output generated.\n");
     }
     
-    for (int i = 0; i < kit_count; i++) {
-        SnpNode* current = kits[i].snps;
-        while (current != NULL) { SnpNode* next = current->next; free(current); current = next; }
-    }
-    free(kits); free(tree_nodes); free(gen_hierarchy); free(marker_names); free(snp_hierarchy);
     cleanup_memory();
     return 0;
 }
-
