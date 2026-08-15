@@ -561,6 +561,7 @@ void parse_snpdata(FILE* file) {
                             SnpNode* new_snp = malloc(sizeof(SnpNode));
                             strcpy(new_snp->name, clean_tok);
                             new_snp->status = status;
+                            new_snp->is_imputed = 0;
                             
                             new_snp->next = kits[current_kit_idx].snps;
                             kits[current_kit_idx].snps = new_snp;

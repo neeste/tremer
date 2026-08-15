@@ -485,21 +485,25 @@ void generate_html_gen_table_output(const char* filename, TreeNode* root) {
         for (int s = 0; s < snp_hierarchy_count; s++) {
             SnpNode* curr = kits[k_idx].snps;
             char status = ' ';
+            int is_imputed = 0;
             
             while(curr != NULL) {
                 if (strcmp(curr->name, snp_hierarchy[s].name) == 0) {
                     if (curr->status == SNP_POSITIVE) status = '+';
                     else if (curr->status == SNP_NEGATIVE) status = '-';
                     else if (curr->status == SNP_UNTESTED) status = '?';
+                    is_imputed = curr->is_imputed;
                     break;
                 }
                 curr = curr->next;
             }
             
             if (status == '+') {
-                fprintf(f, "<td style=\"background-color: #add8e6;\">+</td>");
+                if (is_imputed) fprintf(f, "<td style=\"background-color: #add8e6; color: #555;\">(+)</td>");
+                else fprintf(f, "<td style=\"background-color: #add8e6; font-weight: bold;\">+</td>");
             } else if (status == '-') {
-                fprintf(f, "<td style=\"background-color: #ffb6c1;\">-</td>");
+                if (is_imputed) fprintf(f, "<td style=\"background-color: #ffb6c1; color: #555;\">(-)</td>");
+                else fprintf(f, "<td style=\"background-color: #ffb6c1; font-weight: bold;\">-</td>");
             } else if (status == '?') {
                 fprintf(f, "<td>?</td>");
             } else {

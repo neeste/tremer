@@ -36,6 +36,7 @@ typedef enum {
 typedef struct SnpNode {
     char name[MAX_STRING_LEN];
     SnpStatus status;
+    int is_imputed;
     struct SnpNode* next;
 } SnpNode;
 

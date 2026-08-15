@@ -125,13 +125,14 @@ void impute_snp_statuses() {
                 SnpNode* sn = kits[k].snps;
                 int found = 0;
                 while(sn) {
-                    if (strcmp(sn->name, snp_node->name) == 0) { sn->status = SNP_NEGATIVE; found = 1; break; }
+                    if (strcmp(sn->name, snp_node->name) == 0) { sn->status = SNP_NEGATIVE; sn->is_imputed = 1; found = 1; break; }
                     sn = sn->next;
                 }
                 if (!found) {
                     SnpNode* new_sn = calloc(1, sizeof(SnpNode));
                     strcpy(new_sn->name, snp_node->name);
                     new_sn->status = SNP_NEGATIVE;
+                    new_sn->is_imputed = 1;
                     new_sn->next = kits[k].snps;
                     kits[k].snps = new_sn;
                 }
@@ -154,7 +155,7 @@ void impute_snp_statuses() {
                     int found = 0;
                     while(sn) {
                         if (strcmp(sn->name, snp_node->name) == 0) {
-                            if (sn->status == SNP_UNTESTED) sn->status = implied_status;
+                            if (sn->status == SNP_UNTESTED) { sn->status = implied_status; sn->is_imputed = 1; }
                             found = 1; break;
                         }
                         sn = sn->next;
@@ -163,6 +164,7 @@ void impute_snp_statuses() {
                         SnpNode* new_sn = calloc(1, sizeof(SnpNode));
                         strcpy(new_sn->name, snp_node->name);
                         new_sn->status = implied_status;
+                        new_sn->is_imputed = 1;
                         new_sn->next = kits[k].snps;
                         kits[k].snps = new_sn;
                     }
