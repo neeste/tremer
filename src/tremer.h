@@ -10,7 +10,7 @@
 #define MAX_MARKERS 1000        
 #define MAX_SNPS 3000           
 #define MAX_GEN_GROUPS 1000     
-#define MAX_TREE_NODES 25000     
+#define MAX_TREE_NODES 10000     
 #define MAX_STRING_LEN 128
 #define MAX_NODE_NAME_LEN 2048
 #define MAX_STR_STACK 8 
