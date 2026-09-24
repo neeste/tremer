@@ -323,7 +323,7 @@ int main(int argc, char* argv[]) {
         printf("Adjusting %s by subtracting %s for compatibility...\n", marker_names[d389ii_idx], marker_names[d389i_idx]);
         for (int k = 0; k < kit_count; k++) {
             if (kits[k].str_values[d389i_idx] > 0 && kits[k].str_values[d389ii_idx] > 0) {
-                if (kits[k].str_values[d389ii_idx] > kits[k].str_values[d389i_idx]) {
+                if (kits[k].str_values[d389ii_idx] > 20 && kits[k].str_values[d389ii_idx] > kits[k].str_values[d389i_idx]) {
                     kits[k].str_values[d389ii_idx] -= kits[k].str_values[d389i_idx];
                 }
             }

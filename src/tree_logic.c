@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 
 #define MIN_SHARED            2
 #define MIN_KITS_CLUSTER_ROOT 2
@@ -15,6 +16,13 @@ int global_allele_counts[MAX_MARKERS][256] = {0};
 int allele_counts_initialized = 0;
 
 /* --- 1. Utility and Search Functions --- */
+
+int get_marker_weight(const char* name);
+float get_marker_stability(int m_idx) {
+    if (m_idx < 0 || m_idx >= marker_count || strlen(marker_names[m_idx]) == 0) return 1.0f;
+    return get_marker_weight(marker_names[m_idx]) / 50.0f;
+}
+
 
 SnpTreeNode* find_snp_by_name(const char* name) {
     for (int i = 0; i < snp_hierarchy_count; i++) if (strcmp(snp_hierarchy[i].name, name) == 0) return &snp_hierarchy[i];
@@ -183,11 +191,25 @@ int is_kit_negative_for_specific_node(int kit_idx, TreeNode* node) {
     while (tok) {
         char base[MAX_NODE_NAME_LEN]; strcpy(base, tok);
         char* dot = strchr(base, '.'); if (dot) *dot = '\0';
+        
+        // 1. Check SNP list
         SnpNode* snp = kits[kit_idx].snps;
         while (snp) {
             if (strcmp(snp->name, base) == 0 && snp->status == SNP_NEGATIVE) return 1; 
             snp = snp->next;
         }
+        
+        // 2. Check GEN hierarchy exclusions
+        for (int g = 0; g < gen_hierarchy_count; g++) {
+            if (strcmp(gen_hierarchy[g].ancestor_name, base) == 0) {
+                for (int k = 0; k < gen_hierarchy[g].kit_count; k++) {
+                    if (gen_hierarchy[g].kit_indices[k] == kit_idx && gen_hierarchy[g].kit_statuses[k] == '-') {
+                        return 1;
+                    }
+                }
+            }
+        }
+        
         tok = strtok(NULL, " ");
     }
     return 0;
@@ -659,7 +681,7 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
     while (grouped) {
         grouped = 0; int child_node_count = 0; TreeNode* c = node->first_child; while (c) { child_node_count++; c = c->next_sibling; }
         if (child_node_count < 2) break; 
-        int best_m = -1, best_val = -1, max_shared = 1;
+        int best_m = -1, best_val = -1, max_shared = 1; float max_score = 0.5f;
         for (int m = 0; m < total_markers; m++) {
             int p_val = node->local_modal[m]; 
             if (p_val <= 0) continue;
@@ -684,7 +706,7 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
                 }
             }
             for (int v = 0; v < 256; v++) {
-                if (child_node_matches[v] >= 2 && freqs[v] > max_shared) { best_m = m; best_val = v; max_shared = freqs[v]; }
+                float score = freqs[v] * get_marker_stability(m); if (child_node_matches[v] >= 2 && score > max_score) { best_m = m; best_val = v; max_shared = freqs[v]; max_score = score; }
             }
         }
         if (best_m != -1) {
@@ -731,11 +753,14 @@ void apply_rule_of_two(TreeNode* node, int total_markers) {
     // Shield is only applied to known sons, not kits.
 
     if (node->kit_count >= 2) {
-        int best_m = -1, best_v = -1, max_s = 1;
+        int best_m = -1, best_v = -1, max_s = 1; float max_score = 0.5f;
         for (int m = 0; m < total_markers; m++) {
             int p_val = node->local_modal[m]; if (p_val <= 0) continue;
             int freqs[256] = {0}; for (int i = 0; i < node->kit_count; i++) { int v = kits[node->kit_indices[i]].str_values[m]; if (v > 0 && v != p_val && v < 256) freqs[v]++; } 
-            for (int v = 0; v < 256; v++) if (freqs[v] > max_s) { max_s = freqs[v]; best_m = m; best_v = v; }
+            for (int v = 0; v < 256; v++) {
+                float score = freqs[v] * get_marker_stability(m);
+                if (freqs[v] >= 2 && score > max_score) { max_s = freqs[v]; best_m = m; best_v = v; max_score = score; }
+            }
         }
         if (best_m != -1) {
             TreeNode* str_n = &tree_nodes[tree_node_count++]; str_n->type = NODE_STR; sprintf(str_n->name, "STR%02d", str_node_counter++);
@@ -804,8 +829,10 @@ void reevaluate_mutation_labels(TreeNode* node, int total_markers) {
             int pv = node->parent->local_modal[m], cv = node->local_modal[m];
             if (pv > 0 && cv > 0 && pv != cv) {
                 int occ = 0; for (int k = 0; k < sub_c; k++) if (kits[sub_kits[k]].str_values[m] == cv) occ++;
-                if (occ >= 2) {
+                if (occ >= 2 || relaxed_mode) {
                     if (node->mutation_count < 20) { node->mutations[node->mutation_count].marker_index = m; node->mutations[node->mutation_count].old_val = pv; node->mutations[node->mutation_count].new_val = cv; node->mutation_count++; }
+                } else {
+                    node->local_modal[m] = pv;
                 }
             }
         }

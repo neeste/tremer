@@ -289,11 +289,7 @@ void generate_html_filtered_table_output(const char* filename, TreeNode* root) {
     // 2. Establish Baseline Modal
     int baseline_modal[MAX_MARKERS];
     for (int m = 0; m < marker_count; m++) {
-        if (root->parent != NULL) {
-            baseline_modal[m] = root->parent->local_modal[m];
-        } else {
-            baseline_modal[m] = root->local_modal[m];
-        }
+        baseline_modal[m] = root->local_modal[m];
     }
 
     // 3. Find which markers have mutations to display

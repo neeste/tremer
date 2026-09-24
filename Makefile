@@ -90,7 +90,7 @@ Neely: $(TARGET)
 		for file in $(Neely_INPUTS); do \
 			./$(TARGET) $$file ; \
 		done ; \
-		cat tree[1-9].txt > trees.txt ; \
+		cat tree*.txt > trees.txt ; \
 		rm -f tree[1-9].txt Neely_*_*.html *.json ; \
 		mv trees.txt  Neely_*.* Neely_project ; \
 		echo "Neely strict processing complete."; \
@@ -104,7 +104,7 @@ relaxed: $(TARGET)
 		for file in $(Neely_INPUTS); do \
 			./$(TARGET) -relaxed $$file ; \
 		done ; \
-		cat tree[1-9].txt > trees_relaxed.txt ; \
+		cat tree*.txt > trees_relaxed.txt ; \
 		rm -f tree[1-9].txt Neely_*_*.html *.json ; \
 		mv trees_relaxed.txt  Neely_project ; \
 		echo "Neely relaxed processing complete."; \
