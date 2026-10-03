@@ -672,6 +672,32 @@ void refine_modals_bottom_up(TreeNode* node, int marker_count) {
     }
 }
 
+void refine_modals_top_down(TreeNode* node, int marker_count) {
+    if (!node) return;
+    if (node->parent != NULL) {
+        for (int m = 0; m < marker_count; m++) {
+            int counts[256] = {0}, max_count = 0;
+            for (int i = 0; i < node->kit_count; i++) {
+                int val = kits[node->kit_indices[i]].str_values[m]; 
+                if (val > 0 && val < 256) { counts[val]++; if (counts[val] > max_count) max_count = counts[val]; }
+            }
+            TreeNode* c = node->first_child;
+            while (c) { 
+                if (c->type != NODE_DISTANCE) { 
+                    int val = c->local_modal[m]; 
+                    if (val > 0 && val < 256) { counts[val]++; if (counts[val] > max_count) max_count = counts[val]; } 
+                } 
+                c = c->next_sibling; 
+            }
+            if (max_count > 0 && node->parent->local_modal[m] > 0 && counts[node->parent->local_modal[m]] == max_count) {
+                node->local_modal[m] = node->parent->local_modal[m];
+            }
+        }
+    }
+    TreeNode* child = node->first_child; 
+    while (child) { refine_modals_top_down(child, marker_count); child = child->next_sibling; }
+}
+
 void group_shared_str_mutations(TreeNode* node, int total_markers) {
     if (node == NULL) return;
     // THE SHIELD: Prevent STR branches from forming inside established genealogical or biological nodes
@@ -1321,7 +1347,7 @@ void check_kits_and_reassign(int total_markers) {
                 moved = 1;
             }
         }
-        if (moved) { initialize_modals_top_down(root_node, modal_values, total_markers); refine_modals_bottom_up(root_node, total_markers); }
+        if (moved) { initialize_modals_top_down(root_node, modal_values, total_markers); refine_modals_bottom_up(root_node, total_markers); refine_modals_top_down(root_node, total_markers); }
     }
     
     // 1. Run the strict biological scrubbers
@@ -1346,12 +1372,14 @@ void check_kits_and_reassign(int total_markers) {
     compute_missing_global_modals(total_markers);
     initialize_modals_top_down(root_node, modal_values, total_markers);
     refine_modals_bottom_up(root_node, total_markers);
+    refine_modals_top_down(root_node, total_markers);
     
     // One final grouping pass now that modals are perfectly stable!
     group_shared_str_mutations(root_node, total_markers);
     apply_rule_of_two(root_node, total_markers);
     initialize_modals_top_down(root_node, modal_values, total_markers);
     refine_modals_bottom_up(root_node, total_markers);
+    refine_modals_top_down(root_node, total_markers);
     
     reevaluate_mutation_labels(root_node, total_markers);
     
