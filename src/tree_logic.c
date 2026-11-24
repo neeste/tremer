@@ -707,7 +707,7 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
     while (grouped) {
         grouped = 0; int child_node_count = 0; TreeNode* c = node->first_child; while (c) { child_node_count++; c = c->next_sibling; }
         if (child_node_count < 2) break; 
-        int best_m = -1, best_val = -1, max_shared = 1; float max_score = 0.5f;
+        int best_m = -1, best_val = -1; float max_score = 0.5f;
         for (int m = 0; m < total_markers; m++) {
             int p_val = node->local_modal[m]; 
             if (p_val <= 0) continue;
@@ -732,7 +732,7 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
                 }
             }
             for (int v = 0; v < 256; v++) {
-                float score = freqs[v] * get_marker_stability(m); if (child_node_matches[v] >= 2 && score > max_score) { best_m = m; best_val = v; max_shared = freqs[v]; max_score = score; }
+                float score = freqs[v] * get_marker_stability(m); if (child_node_matches[v] >= 2 && score > max_score) { best_m = m; best_val = v; max_score = score; }
             }
         }
         if (best_m != -1) {
@@ -743,7 +743,6 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
             strn->mutations[0].new_val = best_val;
             strn->mutation_count = 1;
             TreeNode* prev = NULL; c = node->first_child;
-            int g_cnt = 0;
             while (c != NULL) { 
                 TreeNode* nxt = c->next_sibling; 
                 int is_shielded = 0;
@@ -753,11 +752,8 @@ void group_shared_str_mutations(TreeNode* node, int total_markers) {
                         is_shielded = 0;
                     }
                 }
-                if (!is_shielded && c->local_modal[best_m] == best_val) { if (prev == NULL) node->first_child = nxt; else prev->next_sibling = nxt; c->next_sibling = NULL; add_child_to_node(strn, c); g_cnt++; } else prev = c;
+                if (!is_shielded && c->local_modal[best_m] == best_val) { if (prev == NULL) node->first_child = nxt; else prev->next_sibling = nxt; c->next_sibling = NULL; add_child_to_node(strn, c); } else prev = c;
                 c = nxt; 
-            }
-            if (strcmp(node->name, "WilliamNeely.1591") == 0) {
-                printf("DEBUG: WilliamNeely grouped %d children into %s for marker %s\n", g_cnt, strn->name, marker_names[best_m]);
             }
             if (node->type != NODE_GEN && node->type != NODE_SNP) {
                 int k_k[MAX_KITS], k_c = 0;
@@ -779,13 +775,13 @@ void apply_rule_of_two(TreeNode* node, int total_markers) {
     // Shield is only applied to known sons, not kits.
 
     if (node->kit_count >= 2) {
-        int best_m = -1, best_v = -1, max_s = 1; float max_score = 0.5f;
+        int best_m = -1, best_v = -1; float max_score = 0.5f;
         for (int m = 0; m < total_markers; m++) {
             int p_val = node->local_modal[m]; if (p_val <= 0) continue;
             int freqs[256] = {0}; for (int i = 0; i < node->kit_count; i++) { int v = kits[node->kit_indices[i]].str_values[m]; if (v > 0 && v != p_val && v < 256) freqs[v]++; } 
             for (int v = 0; v < 256; v++) {
                 float score = freqs[v] * get_marker_stability(m);
-                if (freqs[v] >= 2 && score > max_score) { max_s = freqs[v]; best_m = m; best_v = v; max_score = score; }
+                if (freqs[v] >= 2 && score > max_score) { best_m = m; best_v = v; max_score = score; }
             }
         }
         if (best_m != -1) {
