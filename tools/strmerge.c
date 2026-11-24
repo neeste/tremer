@@ -189,13 +189,22 @@ int csv_read(char *fn, char **kitnam, int **kitstr, int *max_idx_out) {
     return max_mapped_idx + 1; // Number of markers to output
 }
 
+static int count_valid_strs(const int *arr, int len) {
+    int c = 0;
+    for (int i = 0; i < len; i++) {
+        if (arr[i] != 0) c++;
+    }
+    return c;
+}
+
 int main(int ac, char **av) {
     char *kitnam[512];
-    int csvcnt, i, j, n, strcnt[512], *kitstr[512];
+    int csvcnt, filecnt, i, j, n, strcnt[512], validcnt[512], *kitstr[512];
     FILE *ofp;
     static char ofn[MAXFNL] = "strmerge.txt";
 
     csvcnt = 0;
+    filecnt = 0;
     while (ac > 1) {
         if (av[1][0] == '-') {
             if (av[1][1] == 'o') {
@@ -206,14 +215,50 @@ int main(int ac, char **av) {
                 }
             }
         } else {
-            strcnt[csvcnt] = csv_read(av[1], kitnam + csvcnt, kitstr + csvcnt, &n);
-            csvcnt++;
+            char *tmp_nam = NULL;
+            int *tmp_str = NULL;
+            int tmp_cnt = csv_read(av[1], &tmp_nam, &tmp_str, &n);
+            filecnt++;
+            if (tmp_cnt > 0 && tmp_nam && tmp_str) {
+                int tmp_valid = count_valid_strs(tmp_str, tmp_cnt);
+                int dup_idx = -1;
+                for (i = 0; i < csvcnt; i++) {
+                    if (strcmp(kitnam[i], tmp_nam) == 0) {
+                        dup_idx = i;
+                        break;
+                    }
+                }
+                if (dup_idx != -1) {
+                    if (tmp_cnt > strcnt[dup_idx] ||
+                        (tmp_cnt == strcnt[dup_idx] && tmp_valid >= validcnt[dup_idx])) {
+                        free(kitstr[dup_idx]);
+                        kitstr[dup_idx] = tmp_str;
+                        strcnt[dup_idx] = tmp_cnt;
+                        validcnt[dup_idx] = tmp_valid;
+                    } else {
+                        free(tmp_str);
+                    }
+                    free(tmp_nam);
+                } else if (csvcnt < 512) {
+                    kitnam[csvcnt] = tmp_nam;
+                    kitstr[csvcnt] = tmp_str;
+                    strcnt[csvcnt] = tmp_cnt;
+                    validcnt[csvcnt] = tmp_valid;
+                    csvcnt++;
+                } else {
+                    free(tmp_nam);
+                    free(tmp_str);
+                }
+            } else {
+                free(tmp_nam);
+                free(tmp_str);
+            }
         }
         ac--;
         av++;
     }
     
-    printf("Found %d CSV files.\n", csvcnt);
+    printf("Found %d CSV files (%d unique kits).\n", filecnt, csvcnt);
     
     ofp = fopen(ofn, "w");
     if (!ofp) {
